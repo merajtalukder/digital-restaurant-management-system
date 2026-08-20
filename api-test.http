@@ -1,0 +1,29 @@
+### Get all categories
+GET http://localhost:3000/categories
+
+
+### Get category by ID
+GET http://localhost:3000/categories/1
+
+
+### Create category
+POST http://localhost:3000/categories
+Content-Type: application/json
+
+{
+  "name": "Fast Food",
+  "description": "Burger, Pizza and Snacks"
+}
+
+
+### Update category
+PATCH http://localhost:3000/categories/1
+Content-Type: application/json
+
+{
+  "name": "Fast Food Updated"
+}
+
+
+### Delete category
+DELETE http://localhost:3000/categories/1

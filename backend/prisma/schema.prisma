@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+// =========================
+// ENUMS
+// =========================
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  WAITER
+  CASHIER
+  KITCHEN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum FoodType {
+  INSTANT
+  COOKED
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+}
+
+enum OrderType {
+  WAITER
+  QR
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BKASH
+  NAGAD
+  ROCKET
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+
+// =========================
+// USER
+// =========================
+
+model User {
+  id       Int        @id @default(autoincrement())
+  name     String
+  email    String     @unique
+  password String
+  phone    String?
+  role     UserRole   @default(WAITER)
+  status   UserStatus @default(ACTIVE)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// =========================
+// CATEGORY
+// =========================
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  status      Boolean @default(true)
+
+  menuItems MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// =========================
+// MENU ITEM
+// =========================
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  image       String?
+  foodType    FoodType
+  isAvailable Boolean  @default(true)
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// =========================
+// RESTAURANT TABLE
+// =========================
+
+model RestaurantTable {
+  id          Int         @id @default(autoincrement())
+  tableNumber Int         @unique
+  capacity    Int
+  status      TableStatus @default(AVAILABLE)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// =========================
+// ORDER
+// =========================
+
+model Order {
+  id Int @id @default(autoincrement())
+
+  orderNumber String @unique
+
+  customerName String?
+
+  orderType OrderType
+
+  status OrderStatus @default(PENDING)
+
+  totalAmount Decimal @db.Decimal(10, 2)
+
+  // =========================
+  // TABLE
+  // =========================
+
+  tableId Int
+  table RestaurantTable @relation(fields: [tableId], references: [id])
+
+  // =========================
+  // WAITER
+  // OPTIONAL FOR QR ORDERS
+  // =========================
+
+  waiterId Int?
+  waiter User? @relation(fields: [waiterId], references: [id])
+
+  // =========================
+  // ORDER ITEMS
+  // =========================
+
+  orderItems OrderItem[]
+
+  // =========================
+  // PAYMENT
+  // =========================
+
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// =========================
+// ORDER ITEM
+// =========================
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+  quantity Int
+
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  subtotal Decimal @db.Decimal(10, 2)
+
+  orderId Int
+  order Order @relation(fields: [orderId], references: [id])
+
+  menuItemId Int
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+
+// =========================
+// PAYMENT
+// =========================
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  method PaymentMethod
+
+  status PaymentStatus @default(PENDING)
+
+  amount Decimal @db.Decimal(10, 2)
+
+  transactionId String?
+
+  orderId Int @unique
+  order Order @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
