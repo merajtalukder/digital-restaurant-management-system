@@ -205,6 +205,12 @@ model OrderItem {
 
   subtotal Decimal @db.Decimal(10, 2)
 
+  // =========================
+  // SPECIAL INSTRUCTIONS
+  // =========================
+
+  specialInstructions String? @db.Text
+
   orderId Int
   order Order @relation(fields: [orderId], references: [id])
 

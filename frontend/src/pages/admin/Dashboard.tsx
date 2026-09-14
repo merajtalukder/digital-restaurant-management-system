@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  ShoppingBag,
+  Wallet,
+  Table2,
+  Clock3,
+  AlertCircle,
+} from "lucide-react";
 
 const API_URL = "http://localhost:3000";
 
@@ -21,41 +28,27 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
-  // =========================
-  // FETCH DASHBOARD DATA
-  // =========================
-
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const [ordersResponse, tablesResponse] =
-          await Promise.all([
-            fetch(`${API_URL}/orders`),
-            fetch(`${API_URL}/tables`),
-          ]);
+        const [ordersRes, tablesRes] = await Promise.all([
+          fetch(`${API_URL}/orders`),
+          fetch(`${API_URL}/tables`),
+        ]);
 
-        if (!ordersResponse.ok) {
-          throw new Error("Failed to fetch orders.");
+        if (!ordersRes.ok || !tablesRes.ok) {
+          throw new Error("Failed to load dashboard data.");
         }
 
-        if (!tablesResponse.ok) {
-          throw new Error("Failed to fetch tables.");
-        }
-
-        const ordersData = await ordersResponse.json();
-        const tablesData = await tablesResponse.json();
-
-        setOrders(ordersData);
-        setTables(tablesData);
-      } catch (error) {
-        console.error(error);
-
+        setOrders(await ordersRes.json());
+        setTables(await tablesRes.json());
+      } catch (err) {
+        console.error(err);
         setError(
           "Could not load dashboard data. Please check your backend server."
         );
@@ -64,203 +57,210 @@ const Dashboard = () => {
       }
     };
 
-    fetchDashboardData();
+    loadData();
   }, []);
-
-  // =========================
-  // TODAY'S ORDERS
-  // =========================
 
   const today = new Date();
 
   const todaysOrders = orders.filter((order) => {
-    const orderDate = new Date(order.createdAt);
+    const date = new Date(order.createdAt);
 
     return (
-      orderDate.getFullYear() === today.getFullYear() &&
-      orderDate.getMonth() === today.getMonth() &&
-      orderDate.getDate() === today.getDate()
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
     );
   });
 
-  // =========================
-  // TODAY'S SALES
-  // =========================
-
   const todaysSales = todaysOrders.reduce(
-    (total, order) =>
-      total + Number(order.totalAmount),
+    (sum, order) => sum + Number(order.totalAmount),
     0
   );
-
-  // =========================
-  // AVAILABLE TABLES
-  // =========================
 
   const availableTables = tables.filter(
     (table) => table.status === "AVAILABLE"
   ).length;
 
-  // =========================
-  // PENDING ORDERS
-  // =========================
-
   const pendingOrders = orders.filter(
     (order) => order.status === "PENDING"
   ).length;
 
-  // =========================
-  // STATS
-  // =========================
-
   const stats = [
     {
       title: "Total Orders",
-      value: loading ? "..." : todaysOrders.length.toString(),
+      value: loading ? "..." : todaysOrders.length,
       description: "Orders today",
+      icon: ShoppingBag,
+      style: "from-emerald-500 to-teal-500",
     },
     {
       title: "Today's Sales",
-      value: loading
-        ? "..."
-        : `৳${todaysSales.toFixed(2)}`,
+      value: loading ? "..." : `৳${todaysSales.toFixed(2)}`,
       description: "Total sales today",
+      icon: Wallet,
+      style: "from-violet-500 to-fuchsia-500",
     },
     {
       title: "Available Tables",
-      value: loading
-        ? "..."
-        : availableTables.toString(),
+      value: loading ? "..." : availableTables,
       description: "Tables available",
+      icon: Table2,
+      style: "from-cyan-500 to-blue-500",
     },
     {
       title: "Pending Orders",
-      value: loading
-        ? "..."
-        : pendingOrders.toString(),
+      value: loading ? "..." : pendingOrders,
       description: "Waiting for preparation",
+      icon: Clock3,
+      style: "from-amber-500 to-orange-500",
     },
   ];
 
+  const statusStyle = (status: string) => {
+    const styles: Record<string, string> = {
+      PENDING: "bg-amber-50 text-amber-600",
+      PREPARING: "bg-violet-50 text-violet-600",
+      READY: "bg-cyan-50 text-cyan-600",
+      SERVED: "bg-emerald-50 text-emerald-600",
+      COMPLETED: "bg-emerald-50 text-emerald-700",
+      CANCELLED: "bg-red-50 text-red-600",
+    };
+
+    return styles[status] || "bg-slate-50 text-slate-500";
+  };
+
   return (
-    <div>
-      {/* ================= HEADER ================= */}
+    <div className="min-h-full bg-slate-50 p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl">
 
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">
-          Dashboard
-        </h2>
-
-        <p className="mt-2 text-gray-600">
-          Welcome to Restaurant POS Management System
-        </p>
-      </div>
-
-      {/* ================= ERROR ================= */}
-
-      {error && (
-        <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
-          {error}
-        </div>
-      )}
-
-      {/* ================= STATS ================= */}
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.title}
-            className="rounded-xl bg-white p-6 shadow-sm"
-          >
-            <h3 className="text-sm font-medium text-gray-500">
-              {stat.title}
-            </h3>
-
-            <p className="mt-3 text-3xl font-bold text-gray-800">
-              {stat.value}
-            </p>
-
-            <p className="mt-2 text-sm text-gray-500">
-              {stat.description}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* ================= RECENT ORDERS ================= */}
-
-      <div className="mt-8 rounded-xl bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h3 className="text-xl font-semibold text-gray-800">
-            Recent Orders
-          </h3>
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-extrabold text-slate-800 sm:text-3xl">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Restaurant POS overview
+          </p>
         </div>
 
-        {loading ? (
-          <div className="px-6 py-8 text-center text-gray-500">
-            Loading orders...
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">
-            No orders found.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Order
-                  </th>
-
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Amount
-                  </th>
-
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Status
-                  </th>
-
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {orders.slice(0, 5).map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-t border-gray-200"
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-800">
-                      {order.orderNumber}
-                    </td>
-
-                    <td className="px-6 py-4 font-semibold text-gray-800">
-                      ৳
-                      {Number(
-                        order.totalAmount
-                      ).toFixed(2)}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm text-yellow-700">
-                        {order.status}
-                      </span>
-                    </td>
-
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(
-                        order.createdAt
-                      ).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Error */}
+        {error && (
+          <div className="mb-5 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-600">
+            <AlertCircle size={18} />
+            <span>{error}</span>
           </div>
         )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+
+            return (
+              <div
+                key={stat.title}
+                className="rounded-2xl bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {stat.title}
+                    </p>
+
+                    <p className="mt-2 text-xl font-extrabold text-slate-800 sm:text-2xl">
+                      {stat.value}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${stat.style} text-white shadow-sm`}
+                  >
+                    <Icon size={18} />
+                  </div>
+                </div>
+
+                <p className="mt-2 text-[11px] text-slate-400">
+                  {stat.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Recent Orders */}
+        <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">
+                Recent Orders
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Latest restaurant orders
+              </p>
+            </div>
+
+            <ShoppingBag size={19} className="text-emerald-500" />
+          </div>
+
+          {loading ? (
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              Loading orders...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-slate-400">
+              No orders found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left">
+                <thead className="bg-slate-50">
+                  <tr>
+                    {["Order", "Amount", "Status", "Date"].map((title) => (
+                      <th
+                        key={title}
+                        className="px-5 py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500"
+                      >
+                        {title}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {orders.slice(0, 5).map((order) => (
+                    <tr
+                      key={order.id}
+                      className="border-t border-slate-100 transition hover:bg-slate-50/70"
+                    >
+                      <td className="px-5 py-3.5 text-sm font-bold text-slate-700">
+                        {order.orderNumber}
+                      </td>
+
+                      <td className="px-5 py-3.5 text-sm font-bold text-emerald-600">
+                        ৳{Number(order.totalAmount).toFixed(2)}
+                      </td>
+
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${statusStyle(
+                            order.status
+                          )}`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-3.5 text-xs text-slate-400">
+                        {new Date(order.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

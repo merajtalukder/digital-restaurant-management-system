@@ -1,37 +1,19 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
-  Armchair,
-  ClipboardList,
-  UserRound,
-  UtensilsCrossed,
+  ChefHat,
   ChevronRight,
   LogOut,
 } from "lucide-react";
 
-const WaiterSidebar = () => {
+const KitchenSidebar = () => {
   const navigate = useNavigate();
 
   const navItems = [
     {
       name: "Dashboard",
-      path: "/waiter",
+      path: "/kitchen",
       icon: LayoutDashboard,
-    },
-    {
-      name: "Tables",
-      path: "/waiter/tables",
-      icon: Armchair,
-    },
-    {
-      name: "Orders",
-      path: "/waiter/orders",
-      icon: ClipboardList,
-    },
-    {
-      name: "Profile",
-      path: "/waiter/profile",
-      icon: UserRound,
     },
   ];
 
@@ -48,12 +30,12 @@ const WaiterSidebar = () => {
       <div className="border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 shadow-lg shadow-emerald-500/20">
-            <UtensilsCrossed size={21} className="text-slate-950" />
+            <ChefHat size={21} className="text-slate-950" />
           </div>
 
           <div>
             <h2 className="text-lg font-bold tracking-tight">
-              Waiter Panel
+              Kitchen Panel
             </h2>
             <p className="text-[11px] text-slate-400">
               Restaurant POS
@@ -75,7 +57,7 @@ const WaiterSidebar = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === "/waiter"}
+              end
               className={({ isActive }) =>
                 `group flex items-center justify-between rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 ${
                   isActive
@@ -119,13 +101,14 @@ const WaiterSidebar = () => {
         <div className="rounded-xl bg-gradient-to-br from-violet-500/15 via-purple-500/10 to-cyan-500/10 p-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20">
-              <UserRound size={16} className="text-violet-300" />
+              <ChefHat size={16} className="text-violet-300" />
             </div>
 
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-white">
-                Waiter Account
+                Kitchen Account
               </p>
+
               <p className="text-[10px] text-slate-400">
                 Active
               </p>
@@ -160,4 +143,4 @@ const WaiterSidebar = () => {
   );
 };
 
-export default WaiterSidebar;
+export default KitchenSidebar;

@@ -1,120 +1,93 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Utensils,
+  Table2,
+  ShoppingBag,
+  ChefHat,
+  Users,
+  BarChart3,
+  Settings,
+} from "lucide-react";
 
 const DashboardLayout = () => {
+  const { pathname } = useLocation();
+
+  const navItems = [
+    { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
+    { label: "Menu", path: "/admin/menu", icon: Utensils },
+    { label: "Tables", path: "/admin/tables", icon: Table2 },
+    { label: "Orders", path: "/admin/orders", icon: ShoppingBag },
+    { label: "Kitchen", path: "/admin/kitchen", icon: ChefHat },
+    { label: "Users", path: "/admin/users", icon: Users },
+    { label: "Reports", path: "/admin/reports", icon: BarChart3 },
+    { label: "Settings", path: "/admin/settings", icon: Settings },
+  ];
+
+  const isActive = (path: string) =>
+    path === "/admin"
+      ? pathname === "/admin"
+      : pathname.startsWith(path);
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-50">
 
-      {/* ================= SIDEBAR ================= */}
-
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col bg-slate-950 text-white">
 
         {/* Logo */}
+        <div className="border-b border-white/10 px-5 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
+              <Utensils size={20} />
+            </div>
 
-        <div className="border-b border-gray-800 p-6">
-          <h1 className="text-2xl font-bold">
-            Restaurant POS
-          </h1>
+            <div>
+              <h1 className="text-base font-extrabold">
+                Restaurant POS
+              </h1>
 
-          <p className="mt-1 text-sm text-gray-400">
-            Admin Panel
-          </p>
+              <p className="text-[10px] text-slate-400">
+                Admin Panel
+              </p>
+            </div>
+          </div>
         </div>
 
-
         {/* Navigation */}
+        <nav className="flex-1 space-y-1 px-3 py-5">
+          {navItems.map(({ label, path, icon: Icon }) => {
+            const active = isActive(path);
 
-        <nav className="px-4 py-6">
-
-          {/* Dashboard */}
-
-          <Link
-            to="/"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Dashboard
-          </Link>
-
-
-          {/* Menu */}
-
-          <Link
-            to="/menu"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Menu
-          </Link>
-
-
-          {/* Tables */}
-
-          <Link
-            to="/tables"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Tables
-          </Link>
-
-
-          {/* Orders */}
-
-          <Link
-            to="/orders"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Orders
-          </Link>
-
-
-          {/* Kitchen */}
-
-          <Link
-            to="/kitchen"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Kitchen
-          </Link>
-
-
-          {/* Users */}
-
-          <Link
-            to="/users"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Users
-          </Link>
-
-
-          {/* Reports */}
-
-          <Link
-            to="/reports"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Reports
-          </Link>
-
-
-          {/* Settings */}
-
-          <Link
-            to="/settings"
-            className="mb-2 block rounded-lg px-4 py-3 transition hover:bg-gray-800"
-          >
-            Settings
-          </Link>
-
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  active
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <Icon size={18} />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
         </nav>
 
+        {/* Footer */}
+        <div className="border-t border-white/10 px-4 py-4">
+          <p className="text-center text-[10px] text-slate-500">
+            Restaurant Management System
+          </p>
+        </div>
       </aside>
 
-
-      {/* ================= MAIN CONTENT ================= */}
-
-      <main className="ml-64 min-h-screen p-6">
+      {/* Main */}
+      <main className="ml-60 min-h-screen">
         <Outlet />
       </main>
-
     </div>
   );
 };

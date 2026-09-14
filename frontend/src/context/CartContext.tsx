@@ -12,6 +12,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  specialInstructions?: string;
 }
 
 interface CartContextType {
@@ -21,6 +22,10 @@ interface CartContextType {
   removeFromCart: (id: number) => void;
   increaseQuantity: (id: number) => void;
   decreaseQuantity: (id: number) => void;
+  updateSpecialInstructions: (
+    id: number,
+    specialInstructions: string
+  ) => void;
   clearCart: () => void;
 
   totalAmount: number;
@@ -30,33 +35,37 @@ interface CartContextType {
   showNotification: (message: string) => void;
 
   customerTableNumber: number | null;
-  setCustomerTableNumber: (tableNumber: number | null) => void;
+  setCustomerTableNumber: (
+    tableNumber: number | null
+  ) => void;
 }
 
-const CartContext = createContext<CartContextType | undefined>(
-  undefined
-);
+const CartContext = createContext<
+  CartContextType | undefined
+>(undefined);
 
 export const CartProvider = ({
   children,
 }: {
   children: ReactNode;
 }) => {
-
   // =========================
   // CUSTOMER TABLE
   // =========================
 
-  const [customerTableNumber, setCustomerTableNumberState] =
-    useState<number | null>(() => {
+  const [
+    customerTableNumber,
+    setCustomerTableNumberState,
+  ] = useState<number | null>(() => {
+    const savedTable =
+      localStorage.getItem(
+        "customerTableNumber"
+      );
 
-      const savedTable =
-        localStorage.getItem("customerTableNumber");
-
-      return savedTable
-        ? Number(savedTable)
-        : null;
-    });
+    return savedTable
+      ? Number(savedTable)
+      : null;
+  });
 
   // =========================
   // CART
@@ -82,7 +91,6 @@ export const CartProvider = ({
   const getCartKey = (
     tableNumber: number | null
   ) => {
-
     if (!tableNumber) {
       return "restaurant_cart_no_table";
     }
@@ -95,7 +103,6 @@ export const CartProvider = ({
   // =========================
 
   useEffect(() => {
-
     setCartLoaded(false);
 
     const cartKey =
@@ -105,7 +112,6 @@ export const CartProvider = ({
       localStorage.getItem(cartKey);
 
     try {
-
       const parsedCart =
         savedCart
           ? JSON.parse(savedCart)
@@ -116,19 +122,11 @@ export const CartProvider = ({
           ? parsedCart
           : []
       );
-
     } catch {
-
       setCartItems([]);
-
     }
 
-    // Important:
-    // Wait until old cart is loaded
-    // before saving anything.
-
     setCartLoaded(true);
-
   }, [customerTableNumber]);
 
   // =========================
@@ -136,8 +134,6 @@ export const CartProvider = ({
   // =========================
 
   useEffect(() => {
-
-    // Don't save before cart has loaded
     if (!cartLoaded) {
       return;
     }
@@ -149,7 +145,6 @@ export const CartProvider = ({
       cartKey,
       JSON.stringify(cartItems)
     );
-
   }, [
     cartItems,
     customerTableNumber,
@@ -163,24 +158,19 @@ export const CartProvider = ({
   const setCustomerTableNumber = (
     tableNumber: number | null
   ) => {
-
     setCustomerTableNumberState(
       tableNumber
     );
 
     if (tableNumber !== null) {
-
       localStorage.setItem(
         "customerTableNumber",
         String(tableNumber)
       );
-
     } else {
-
       localStorage.removeItem(
         "customerTableNumber"
       );
-
     }
   };
 
@@ -189,20 +179,24 @@ export const CartProvider = ({
   // =========================
 
   const addToCart = (item: CartItem) => {
+    const newInstructions =
+      item.specialInstructions?.trim() || "";
 
     setCartItems((currentItems) => {
-
       const existingItem =
         currentItems.find(
           (cartItem) =>
-            cartItem.id === item.id
+            cartItem.id === item.id &&
+            (cartItem.specialInstructions?.trim() ||
+              "") === newInstructions
         );
 
       if (existingItem) {
-
         return currentItems.map(
           (cartItem) =>
-            cartItem.id === item.id
+            cartItem.id === item.id &&
+            (cartItem.specialInstructions?.trim() ||
+              "") === newInstructions
               ? {
                   ...cartItem,
                   quantity:
@@ -217,6 +211,8 @@ export const CartProvider = ({
         {
           ...item,
           quantity: 1,
+          specialInstructions:
+            newInstructions || undefined,
         },
       ];
     });
@@ -230,8 +226,9 @@ export const CartProvider = ({
   // REMOVE FROM CART
   // =========================
 
-  const removeFromCart = (id: number) => {
-
+  const removeFromCart = (
+    id: number
+  ) => {
     setCartItems((currentItems) =>
       currentItems.filter(
         (item) => item.id !== id
@@ -243,8 +240,9 @@ export const CartProvider = ({
   // INCREASE QUANTITY
   // =========================
 
-  const increaseQuantity = (id: number) => {
-
+  const increaseQuantity = (
+    id: number
+  ) => {
     setCartItems((currentItems) =>
       currentItems.map((item) =>
         item.id === id
@@ -262,8 +260,9 @@ export const CartProvider = ({
   // DECREASE QUANTITY
   // =========================
 
-  const decreaseQuantity = (id: number) => {
-
+  const decreaseQuantity = (
+    id: number
+  ) => {
     setCartItems((currentItems) =>
       currentItems
         .map((item) =>
@@ -282,11 +281,32 @@ export const CartProvider = ({
   };
 
   // =========================
+  // UPDATE SPECIAL INSTRUCTIONS
+  // =========================
+
+  const updateSpecialInstructions = (
+    id: number,
+    specialInstructions: string
+  ) => {
+    setCartItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              specialInstructions:
+                specialInstructions.trim() ||
+                undefined,
+            }
+          : item
+      )
+    );
+  };
+
+  // =========================
   // CLEAR CART
   // =========================
 
   const clearCart = () => {
-
     setCartItems([]);
 
     const cartKey =
@@ -325,7 +345,6 @@ export const CartProvider = ({
   const showNotification = (
     message: string
   ) => {
-
     setNotification(message);
 
     setTimeout(() => {
@@ -336,13 +355,13 @@ export const CartProvider = ({
   return (
     <CartContext.Provider
       value={{
-
         cartItems,
 
         addToCart,
         removeFromCart,
         increaseQuantity,
         decreaseQuantity,
+        updateSpecialInstructions,
         clearCart,
 
         totalAmount,
@@ -353,10 +372,8 @@ export const CartProvider = ({
 
         customerTableNumber,
         setCustomerTableNumber,
-
       }}
     >
-
       {children}
 
       {/* =========================
@@ -364,9 +381,7 @@ export const CartProvider = ({
       ========================= */}
 
       {notification && (
-
-        <div className="fixed top-5 right-5 z-[9999] bg-green-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center gap-3">
-
+        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-3 rounded-lg bg-green-600 px-5 py-3 text-white shadow-lg">
           <span className="text-lg">
             ✓
           </span>
@@ -374,11 +389,8 @@ export const CartProvider = ({
           <span className="font-medium">
             {notification}
           </span>
-
         </div>
-
       )}
-
     </CartContext.Provider>
   );
 };
@@ -388,12 +400,10 @@ export const CartProvider = ({
 // =========================
 
 export const useCart = () => {
-
   const context =
     useContext(CartContext);
 
   if (!context) {
-
     throw new Error(
       "useCart must be used inside CartProvider"
     );

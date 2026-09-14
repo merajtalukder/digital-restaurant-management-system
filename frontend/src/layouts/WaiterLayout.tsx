@@ -3,16 +3,16 @@ import WaiterSidebar from "../components/waiter/WaiterSidebar";
 
 const WaiterLayout = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
-
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/40 to-cyan-50">
       {/* Sidebar */}
       <WaiterSidebar />
 
       {/* Main Content */}
-      <div className="ml-64 min-h-screen p-6">
-        <Outlet />
-      </div>
-
+      <main className="ml-64 min-h-screen p-4 sm:p-5 lg:p-6">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  BarChart3,
+  ShoppingBag,
+  Wallet,
+  CreditCard,
+  CheckCircle2,
+  XCircle,
+  Users,
+  QrCode,
+  RefreshCw,
+  CalendarDays,
+} from "lucide-react";
 
 const API_URL = "http://localhost:3000";
 
-type ReportPeriod =
-  | "Today"
-  | "This Week"
-  | "This Month";
-
+type ReportPeriod = "Today" | "This Week" | "This Month";
 type OrderType = "WAITER" | "QR";
 
 type OrderStatus =
@@ -71,43 +79,26 @@ interface Order {
 }
 
 const Reports = () => {
-  const [period, setPeriod] =
-    useState<ReportPeriod>("Today");
-
-  const [orders, setOrders] =
-    useState<Order[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  // =========================
-  // FETCH ORDERS
-  // =========================
+  const [period, setPeriod] = useState<ReportPeriod>("Today");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
-        `${API_URL}/orders`
-      );
+      const response = await fetch(`${API_URL}/orders`);
 
       if (!response.ok) {
-        throw new Error(
-          "Failed to fetch orders."
-        );
+        throw new Error("Failed to fetch orders.");
       }
 
-      const data = await response.json();
-
+      const data: Order[] = await response.json();
       setOrders(data);
     } catch (error) {
       console.error(error);
-
       setError(
         "Could not load report data. Please check your backend server."
       );
@@ -116,67 +107,41 @@ const Reports = () => {
     }
   };
 
-  // =========================
-  // LOAD ORDERS
-  // =========================
-
   useEffect(() => {
     fetchOrders();
   }, []);
-
-  // =========================
-  // PERIOD FILTER
-  // =========================
 
   const filteredOrders = useMemo(() => {
     const now = new Date();
 
     return orders.filter((order) => {
-      const orderDate =
-        new Date(order.createdAt);
+      const orderDate = new Date(order.createdAt);
 
       if (period === "Today") {
         return (
-          orderDate.getDate() ===
-            now.getDate() &&
-          orderDate.getMonth() ===
-            now.getMonth() &&
-          orderDate.getFullYear() ===
-            now.getFullYear()
+          orderDate.getDate() === now.getDate() &&
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
         );
       }
 
       if (period === "This Week") {
-        const startOfWeek =
-          new Date(now);
-
-        const day =
-          startOfWeek.getDay();
-
-        const difference =
-          day === 0 ? 6 : day - 1;
+        const startOfWeek = new Date(now);
+        const day = startOfWeek.getDay();
+        const difference = day === 0 ? 6 : day - 1;
 
         startOfWeek.setDate(
-          startOfWeek.getDate() -
-            difference
+          startOfWeek.getDate() - difference
         );
-
-        startOfWeek.setHours(
-          0,
-          0,
-          0,
-          0
-        );
+        startOfWeek.setHours(0, 0, 0, 0);
 
         return orderDate >= startOfWeek;
       }
 
       if (period === "This Month") {
         return (
-          orderDate.getMonth() ===
-            now.getMonth() &&
-          orderDate.getFullYear() ===
-            now.getFullYear()
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
         );
       }
 
@@ -184,720 +149,532 @@ const Reports = () => {
     });
   }, [orders, period]);
 
-  // =========================
-  // COMPLETED ORDERS
-  // =========================
+  const completedOrders = filteredOrders.filter(
+    (order) => order.status === "COMPLETED"
+  );
 
-  const completedOrders =
-    filteredOrders.filter(
-      (order) =>
-        order.status === "COMPLETED"
-    );
+  const cancelledOrders = filteredOrders.filter(
+    (order) => order.status === "CANCELLED"
+  );
 
-  // =========================
-  // CANCELLED ORDERS
-  // =========================
+  const totalSales = completedOrders.reduce(
+    (sum, order) => sum + Number(order.totalAmount),
+    0
+  );
 
-  const cancelledOrders =
-    filteredOrders.filter(
-      (order) =>
-        order.status === "CANCELLED"
-    );
-
-  // =========================
-  // TOTAL SALES
-  // =========================
-
-  const totalSales =
-    completedOrders.reduce(
-      (sum, order) =>
-        sum +
-        Number(order.totalAmount),
-      0
-    );
-
-  // =========================
-  // TOTAL ORDERS
-  // =========================
-
-  const totalOrders =
-    filteredOrders.length;
-
-  // =========================
-  // AVERAGE ORDER
-  // =========================
+  const totalOrders = filteredOrders.length;
 
   const averageOrder =
     completedOrders.length > 0
-      ? totalSales /
-        completedOrders.length
+      ? totalSales / completedOrders.length
       : 0;
 
-  // =========================
-  // PAID ORDERS
-  // =========================
+  const paidOrders = filteredOrders.filter(
+    (order) => order.payment?.status === "PAID"
+  );
 
-  const paidOrders =
-    filteredOrders.filter(
-      (order) =>
-        order.payment?.status ===
-        "PAID"
+  const waiterSales = completedOrders
+    .filter((order) => order.orderType === "WAITER")
+    .reduce(
+      (sum, order) => sum + Number(order.totalAmount),
+      0
     );
 
-  // =========================
-  // WAITER SALES
-  // =========================
-
-  const waiterSales =
-    completedOrders
-      .filter(
-        (order) =>
-          order.orderType ===
-          "WAITER"
-      )
-      .reduce(
-        (sum, order) =>
-          sum +
-          Number(order.totalAmount),
-        0
-      );
-
-  // =========================
-  // QR SALES
-  // =========================
-
-  const qrSales =
-    completedOrders
-      .filter(
-        (order) =>
-          order.orderType ===
-          "QR"
-      )
-      .reduce(
-        (sum, order) =>
-          sum +
-          Number(order.totalAmount),
-        0
-      );
-
-  // =========================
-  // FORMAT MONEY
-  // =========================
-
-  const formatMoney = (
-    amount: number
-  ) => {
-    return `৳${amount.toLocaleString(
-      "en-BD",
-      {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }
-    )}`;
-  };
-
-  // =========================
-  // ORDER TYPE
-  // =========================
-
-  const getOrderTypeText = (
-    type: OrderType
-  ) => {
-    return type === "WAITER"
-      ? "Waiter Order"
-      : "QR Self Order";
-  };
-
-  // =========================
-  // STATUS TEXT
-  // =========================
-
-  const getStatusText = (
-    status: OrderStatus
-  ) => {
-    switch (status) {
-      case "PENDING":
-        return "Pending";
-
-      case "PREPARING":
-        return "Preparing";
-
-      case "READY":
-        return "Ready";
-
-      case "SERVED":
-        return "Served";
-
-      case "COMPLETED":
-        return "Completed";
-
-      case "CANCELLED":
-        return "Cancelled";
-
-      default:
-        return status;
-    }
-  };
-
-  // =========================
-  // STATUS STYLE
-  // =========================
-
-  const getStatusClass = (
-    status: OrderStatus
-  ) => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-100 text-green-700";
-
-      case "CANCELLED":
-        return "bg-red-100 text-red-700";
-
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-700";
-
-      case "PREPARING":
-        return "bg-blue-100 text-blue-700";
-
-      case "READY":
-        return "bg-purple-100 text-purple-700";
-
-      case "SERVED":
-        return "bg-indigo-100 text-indigo-700";
-
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  // =========================
-  // PAYMENT STATUS
-  // =========================
-
-  const getPaymentStatus = (
-    order: Order
-  ) => {
-    return (
-      order.payment?.status ??
-      "PENDING"
+  const qrSales = completedOrders
+    .filter((order) => order.orderType === "QR")
+    .reduce(
+      (sum, order) => sum + Number(order.totalAmount),
+      0
     );
+
+  const formatMoney = (amount: number) =>
+    `৳${amount.toLocaleString("en-BD", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const getTableNumber = (table?: Table | null) =>
+    table
+      ? `T-${String(table.tableNumber).padStart(2, "0")}`
+      : "N/A";
+
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleString();
+
+  const statusConfig: Record<
+    OrderStatus,
+    { label: string; className: string }
+  > = {
+    PENDING: {
+      label: "Pending",
+      className:
+        "bg-amber-50 text-amber-700 border-amber-200",
+    },
+    PREPARING: {
+      label: "Preparing",
+      className:
+        "bg-violet-50 text-violet-700 border-violet-200",
+    },
+    READY: {
+      label: "Ready",
+      className:
+        "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    SERVED: {
+      label: "Served",
+      className:
+        "bg-cyan-50 text-cyan-700 border-cyan-200",
+    },
+    COMPLETED: {
+      label: "Completed",
+      className:
+        "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    CANCELLED: {
+      label: "Cancelled",
+      className:
+        "bg-red-50 text-red-700 border-red-200",
+    },
   };
 
-  // =========================
-  // PAYMENT STYLE
-  // =========================
-
-  const getPaymentClass = (
-    status: PaymentStatus
-  ) => {
-    switch (status) {
-      case "PAID":
-        return "bg-green-100 text-green-700";
-
-      case "FAILED":
-        return "bg-red-100 text-red-700";
-
-      case "REFUNDED":
-        return "bg-purple-100 text-purple-700";
-
-      default:
-        return "bg-yellow-100 text-yellow-700";
-    }
+  const paymentConfig: Record<
+    PaymentStatus,
+    { label: string; className: string }
+  > = {
+    PAID: {
+      label: "Paid",
+      className:
+        "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    FAILED: {
+      label: "Failed",
+      className:
+        "bg-red-50 text-red-700 border-red-200",
+    },
+    REFUNDED: {
+      label: "Refunded",
+      className:
+        "bg-violet-50 text-violet-700 border-violet-200",
+    },
+    PENDING: {
+      label: "Pending",
+      className:
+        "bg-amber-50 text-amber-700 border-amber-200",
+    },
   };
 
-  // =========================
-  // PAYMENT LABEL
-  // =========================
+  const getPaymentStatus = (order: Order): PaymentStatus =>
+    order.payment?.status ?? "PENDING";
 
-  const getPaymentLabel = (
-    status: PaymentStatus
-  ) => {
-    switch (status) {
-      case "PAID":
-        return "Paid";
-
-      case "FAILED":
-        return "Failed";
-
-      case "REFUNDED":
-        return "Refunded";
-
-      case "PENDING":
-        return "Pending";
-
-      default:
-        return status;
-    }
-  };
-
-  // =========================
-  // TABLE NUMBER
-  // =========================
-
-  const getTableNumber = (
-    table?: Table | null
-  ) => {
-    if (!table) {
-      return "N/A";
-    }
-
-    return `T-${String(
-      table.tableNumber
-    ).padStart(2, "0")}`;
-  };
-
-  // =========================
-  // FORMAT DATE
-  // =========================
-
-  const formatDate = (
-    date: string
-  ) => {
-    return new Date(
-      date
-    ).toLocaleString();
-  };
+  const summaryCards = [
+    {
+      label: "Total Sales",
+      value: formatMoney(totalSales),
+      note: "From completed orders",
+      icon: <Wallet size={18} />,
+      box: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Total Orders",
+      value: totalOrders,
+      note: period,
+      icon: <ShoppingBag size={18} />,
+      box: "bg-cyan-50 text-cyan-600",
+    },
+    {
+      label: "Average Order",
+      value: formatMoney(averageOrder),
+      note: "Per completed order",
+      icon: <BarChart3 size={18} />,
+      box: "bg-violet-50 text-violet-600",
+    },
+    {
+      label: "Paid Orders",
+      value: paidOrders.length,
+      note: "Payment completed",
+      icon: <CreditCard size={18} />,
+      box: "bg-teal-50 text-teal-600",
+    },
+  ];
 
   return (
-    <div className="w-full">
+    <div className="min-w-0">
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-sm">
+            <BarChart3 size={21} />
+          </div>
 
-      {/* ================= HEADER ================= */}
-
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800">
-            Reports
-          </h2>
-
-          <p className="mt-2 text-gray-600">
-            View restaurant sales and order reports
-          </p>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">
+              Reports
+            </h2>
+            <p className="text-xs text-slate-500">
+              Restaurant sales and order performance
+            </p>
+          </div>
         </div>
 
-        {/* PERIOD */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={fetchOrders}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-600 shadow-sm transition hover:border-emerald-200 hover:text-emerald-600 disabled:opacity-50"
+          >
+            <RefreshCw
+              size={14}
+              className={loading ? "animate-spin" : ""}
+            />
+            Refresh
+          </button>
 
-        <select
-          value={period}
-          onChange={(e) =>
-            setPeriod(
-              e.target.value as ReportPeriod
-            )
-          }
-          className="rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none focus:border-gray-900"
-        >
-          <option value="Today">
-            Today
-          </option>
+          <div className="relative">
+            <CalendarDays
+              size={14}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500"
+            />
 
-          <option value="This Week">
-            This Week
-          </option>
-
-          <option value="This Month">
-            This Month
-          </option>
-        </select>
-
+            <select
+              value={period}
+              onChange={(e) =>
+                setPeriod(
+                  e.target.value as ReportPeriod
+                )
+              }
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-emerald-400"
+            >
+              <option value="Today">Today</option>
+              <option value="This Week">This Week</option>
+              <option value="This Month">This Month</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* ================= ERROR ================= */}
-
+      {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-700">
-          {error}
+        <div className="mb-5 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+          <span>{error}</span>
+
+          <button
+            onClick={fetchOrders}
+            className="font-bold hover:underline"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {/* ================= LOADING ================= */}
-
       {loading ? (
-
-        <div className="rounded-xl bg-white p-10 text-center text-gray-500 shadow-sm">
-          Loading reports...
+        <div className="rounded-2xl border border-slate-200 bg-white py-16 text-center shadow-sm">
+          <RefreshCw
+            size={28}
+            className="mx-auto mb-3 animate-spin text-emerald-500"
+          />
+          <p className="text-xs font-medium text-slate-500">
+            Loading reports...
+          </p>
         </div>
-
       ) : (
-
         <>
+          {/* Summary */}
+          <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {summaryCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    {card.label}
+                  </p>
 
-          {/* ================= SUMMARY ================= */}
+                  <span
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg ${card.box}`}
+                  >
+                    {card.icon}
+                  </span>
+                </div>
 
-          <div className="mb-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <p className="mt-3 truncate text-xl font-bold text-slate-900">
+                  {card.value}
+                </p>
 
-            {/* TOTAL SALES */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm font-medium text-gray-500">
-                Total Sales
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-gray-800">
-                {formatMoney(
-                  totalSales
-                )}
-              </p>
-
-              <p className="mt-2 text-sm text-green-600">
-                From completed orders
-              </p>
-
-            </div>
-
-            {/* TOTAL ORDERS */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm font-medium text-gray-500">
-                Total Orders
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-gray-800">
-                {totalOrders}
-              </p>
-
-              <p className="mt-2 text-sm text-gray-500">
-                {period}
-              </p>
-
-            </div>
-
-            {/* AVERAGE ORDER */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm font-medium text-gray-500">
-                Average Order
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-gray-800">
-                {formatMoney(
-                  averageOrder
-                )}
-              </p>
-
-              <p className="mt-2 text-sm text-gray-500">
-                Per completed order
-              </p>
-
-            </div>
-
-            {/* PAID ORDERS */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm font-medium text-gray-500">
-                Paid Orders
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-green-600">
-                {paidOrders.length}
-              </p>
-
-              <p className="mt-2 text-sm text-gray-500">
-                Payment completed
-              </p>
-
-            </div>
-
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {card.note}
+                </p>
+              </div>
+            ))}
           </div>
 
-          {/* ================= SECONDARY SUMMARY ================= */}
+          {/* Secondary Stats */}
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2
+                  size={16}
+                  className="text-emerald-500"
+                />
+                <p className="text-xs font-bold text-slate-700">
+                  Completed Orders
+                </p>
+              </div>
 
-          <div className="mb-8 grid gap-5 md:grid-cols-3">
-
-            {/* COMPLETED */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm text-gray-500">
-                Completed Orders
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-green-600">
+              <p className="mt-2 text-2xl font-bold text-emerald-600">
                 {completedOrders.length}
               </p>
-
             </div>
 
-            {/* CANCELLED */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm text-gray-500">
-                Cancelled Orders
-              </p>
+            <div className="rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-4">
+              <div className="flex items-center gap-2">
+                <XCircle
+                  size={16}
+                  className="text-red-500"
+                />
+                <p className="text-xs font-bold text-slate-700">
+                  Cancelled Orders
+                </p>
+              </div>
 
               <p className="mt-2 text-2xl font-bold text-red-600">
                 {cancelledOrders.length}
               </p>
-
             </div>
 
-            {/* PERIOD */}
+            <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays
+                  size={16}
+                  className="text-violet-500"
+                />
+                <p className="text-xs font-bold text-slate-700">
+                  Selected Period
+                </p>
+              </div>
 
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <p className="text-sm text-gray-500">
-                Selected Period
-              </p>
-
-              <p className="mt-2 text-2xl font-bold text-gray-800">
+              <p className="mt-2 text-lg font-bold text-violet-600">
                 {period}
               </p>
-
             </div>
-
           </div>
 
-          {/* ================= SALES BREAKDOWN ================= */}
+          {/* Sales Breakdown */}
+          <div className="mb-5 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+                  <Users size={19} />
+                </div>
 
-          <div className="mb-8 grid gap-6 md:grid-cols-2">
-
-            {/* WAITER */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <h3 className="text-xl font-semibold text-gray-800">
-                Waiter Orders
-              </h3>
-
-              <p className="mt-2 text-sm text-gray-500">
-                Sales from waiter-based orders
-              </p>
-
-              <div className="mt-6">
-
-                <p className="text-3xl font-bold text-gray-800">
-                  {formatMoney(
-                    waiterSales
-                  )}
-                </p>
-
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Waiter Orders
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Sales from waiter-based orders
+                  </p>
+                </div>
               </div>
 
-            </div>
-
-            {/* QR */}
-
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-
-              <h3 className="text-xl font-semibold text-gray-800">
-                QR Self Orders
-              </h3>
-
-              <p className="mt-2 text-sm text-gray-500">
-                Sales from QR-based customer orders
+              <p className="mt-5 text-2xl font-bold text-slate-900">
+                {formatMoney(waiterSales)}
               </p>
 
-              <div className="mt-6">
-
-                <p className="text-3xl font-bold text-gray-800">
-                  {formatMoney(
-                    qrSales
-                  )}
-                </p>
-
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-500"
+                  style={{
+                    width:
+                      totalSales > 0
+                        ? `${Math.min(
+                            (waiterSales / totalSales) * 100,
+                            100
+                          )}%`
+                        : "0%",
+                  }}
+                />
               </div>
-
             </div>
 
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                  <QrCode size={19} />
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    QR Self Orders
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Sales from QR customer orders
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-5 text-2xl font-bold text-slate-900">
+                {formatMoney(qrSales)}
+              </p>
+
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500"
+                  style={{
+                    width:
+                      totalSales > 0
+                        ? `${Math.min(
+                            (qrSales / totalSales) * 100,
+                            100
+                          )}%`
+                        : "0%",
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* ================= ORDER REPORT ================= */}
+          {/* Order Details */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Sales & Order Details
+                </h3>
 
-          <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
+                <p className="mt-0.5 text-[11px] text-slate-400">
+                  Order performance for{" "}
+                  {period.toLowerCase()}
+                </p>
+              </div>
 
-            {/* HEADER */}
-
-            <div className="border-b border-gray-200 px-6 py-5">
-
-              <h3 className="text-xl font-semibold text-gray-800">
-                Sales & Order Details
-              </h3>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Order performance for{" "}
-                {period.toLowerCase()}
-              </p>
-
+              <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600">
+                {filteredOrders.length} Orders
+              </span>
             </div>
-
-            {/* TABLE */}
 
             <div className="w-full overflow-x-auto">
-
-              <table className="w-full min-w-[900px] text-left">
-
-                <thead className="bg-gray-50">
-
-                  <tr>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Order
-                    </th>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Table
-                    </th>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Order Type
-                    </th>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Total
-                    </th>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Status
-                    </th>
-
-                    <th className="px-6 py-4 text-sm font-semibold text-gray-600">
-                      Payment
-                    </th>
-
+              <table className="w-full min-w-[850px] text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/70">
+                    {[
+                      "Order",
+                      "Table",
+                      "Type",
+                      "Total",
+                      "Status",
+                      "Payment",
+                    ].map((head) => (
+                      <th
+                        key={head}
+                        className="px-5 py-3 text-[10px] font-bold uppercase tracking-wide text-slate-400"
+                      >
+                        {head}
+                      </th>
+                    ))}
                   </tr>
-
                 </thead>
 
                 <tbody>
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => {
+                      const paymentStatus =
+                        getPaymentStatus(order);
 
-                  {filteredOrders.length >
-                  0 ? (
+                      const status =
+                        statusConfig[order.status];
 
-                    filteredOrders.map(
-                      (order) => {
+                      const payment =
+                        paymentConfig[paymentStatus];
 
-                        const paymentStatus =
-                          getPaymentStatus(
-                            order
-                          );
+                      return (
+                        <tr
+                          key={order.id}
+                          className="border-b border-slate-100 transition hover:bg-slate-50/70"
+                        >
+                          <td className="px-5 py-3.5">
+                            <p className="text-xs font-bold text-slate-800">
+                              {order.orderNumber}
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-slate-400">
+                              {formatDate(order.createdAt)}
+                            </p>
+                          </td>
 
-                        return (
-                          <tr
-                            key={order.id}
-                            className="border-t border-gray-200"
-                          >
+                          <td className="px-5 py-3.5">
+                            <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+                              {getTableNumber(order.table)}
+                            </span>
+                          </td>
 
-                            {/* ORDER */}
+                          <td className="px-5 py-3.5">
+                            <span
+                              className={`rounded-lg px-2 py-1 text-[10px] font-bold ${
+                                order.orderType === "QR"
+                                  ? "bg-violet-50 text-violet-700"
+                                  : "bg-cyan-50 text-cyan-700"
+                              }`}
+                            >
+                              {order.orderType === "QR"
+                                ? "QR Self Order"
+                                : "Waiter Order"}
+                            </span>
+                          </td>
 
-                            <td className="px-6 py-4">
-
-                              <p className="font-medium text-gray-800">
-                                {
-                                  order.orderNumber
-                                }
-                              </p>
-
-                              <p className="mt-1 text-xs text-gray-500">
-                                {formatDate(
-                                  order.createdAt
-                                )}
-                              </p>
-
-                            </td>
-
-                            {/* TABLE */}
-
-                            <td className="px-6 py-4 font-medium text-gray-700">
-
-                              {getTableNumber(
-                                order.table
-                              )}
-
-                            </td>
-
-                            {/* TYPE */}
-
-                            <td className="px-6 py-4">
-
-                              <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                                {getOrderTypeText(
-                                  order.orderType
-                                )}
-                              </span>
-
-                            </td>
-
-                            {/* TOTAL */}
-
-                            <td className="px-6 py-4 font-semibold text-gray-800">
-
+                          <td className="px-5 py-3.5">
+                            <span className="text-xs font-bold text-slate-800">
                               {formatMoney(
-                                Number(
-                                  order.totalAmount
-                                )
+                                Number(order.totalAmount)
                               )}
+                            </span>
+                          </td>
 
-                            </td>
+                          <td className="px-5 py-3.5">
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${status.className}`}
+                            >
+                              {status.label}
+                            </span>
+                          </td>
 
-                            {/* STATUS */}
-
-                            <td className="px-6 py-4">
-
-                              <span
-                                className={`rounded-full px-3 py-1 text-sm ${getStatusClass(
-                                  order.status
-                                )}`}
-                              >
-                                {getStatusText(
-                                  order.status
-                                )}
-                              </span>
-
-                            </td>
-
-                            {/* PAYMENT */}
-
-                            <td className="px-6 py-4">
-
-                              <span
-                                className={`rounded-full px-3 py-1 text-sm ${getPaymentClass(
-                                  paymentStatus
-                                )}`}
-                              >
-                                {getPaymentLabel(
-                                  paymentStatus
-                                )}
-                              </span>
-
-                            </td>
-
-                          </tr>
-                        );
-                      }
-                    )
-
+                          <td className="px-5 py-3.5">
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${payment.className}`}
+                            >
+                              {payment.label}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
-
                     <tr>
-
                       <td
                         colSpan={6}
-                        className="px-6 py-10 text-center text-gray-500"
+                        className="px-5 py-14 text-center"
                       >
-                        No orders found for{" "}
-                        {period.toLowerCase()}.
+                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                          <ShoppingBag size={20} />
+                        </div>
+
+                        <p className="mt-3 text-xs font-semibold text-slate-500">
+                          No orders found
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-slate-400">
+                          No orders available for{" "}
+                          {period.toLowerCase()}.
+                        </p>
                       </td>
-
                     </tr>
-
                   )}
-
                 </tbody>
-
               </table>
-
             </div>
-
           </div>
-
         </>
-
       )}
-
     </div>
   );
 };

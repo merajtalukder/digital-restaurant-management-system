@@ -9,25 +9,31 @@ import {
   UserCog,
   UserRound,
   Utensils,
+  ChefHat,
+  WalletCards,
 } from "lucide-react";
 
-type LoginRole = "ADMIN" | "WAITER";
+type LoginRole =
+  | "ADMIN"
+  | "WAITER"
+  | "KITCHEN"
+  | "CASHIER";
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState<LoginRole>("ADMIN");
-  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] =
+    useState<LoginRole>("ADMIN");
 
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  // Always start with empty values
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // =========================
-  // LOGIN
-  // =========================
 
   const handleLogin = async (
     e: React.FormEvent<HTMLFormElement>
@@ -42,11 +48,9 @@ const Login = () => {
         "http://localhost:3000/auth/login",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email,
             password,
@@ -57,19 +61,12 @@ const Login = () => {
 
       const data = await response.json();
 
-      // =========================
-      // LOGIN FAILED
-      // =========================
-
       if (!response.ok) {
         throw new Error(
-          data.message || "Invalid email or password"
+          data.message ||
+            "Invalid email or password"
         );
       }
-
-      // =========================
-      // SAVE LOGIN DATA
-      // =========================
 
       localStorage.setItem(
         "access_token",
@@ -81,16 +78,26 @@ const Login = () => {
         JSON.stringify(data.user)
       );
 
-      // =========================
-      // ROLE BASED REDIRECT
-      // =========================
+      switch (data.user.role) {
+        case "ADMIN":
+          navigate("/admin");
+          break;
 
-      if (data.user.role === "ADMIN") {
-        navigate("/admin");
-      } else if (data.user.role === "WAITER") {
-        navigate("/waiter");
+        case "WAITER":
+          navigate("/waiter");
+          break;
+
+        case "KITCHEN":
+          navigate("/kitchen");
+          break;
+
+        case "CASHIER":
+          navigate("/cashier");
+          break;
+
+        default:
+          setError("Invalid user role.");
       }
-
     } catch (error) {
       console.error("Login error:", error);
 
@@ -105,61 +112,55 @@ const Login = () => {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-slate-100 p-4 md:p-6">
+    <div className="fixed inset-0 overflow-hidden bg-slate-100 p-2 md:p-3">
 
-      {/* ================= MAIN CARD ================= */}
+      <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl">
 
-      <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3xl bg-white shadow-xl">
-
-        {/* ================= LOGIN CARD ================= */}
-
-        <div className="w-full max-w-md px-6">
+        <div className="w-full max-w-xs px-2">
 
           {/* LOGO */}
 
-          <div className="mb-7 text-center">
+          <div className="mb-3 text-center">
 
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg">
-              <Utensils size={28} />
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+              <Utensils size={20} />
             </div>
 
-            <h1 className="mt-4 text-2xl font-bold text-slate-900">
+            <h1 className="mt-2 text-lg font-bold text-slate-900">
               Restaurant POS
             </h1>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="text-[10px] text-slate-500">
               Sign in to manage your restaurant
             </p>
 
           </div>
 
-
           {/* LOGIN CARD */}
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
 
-            <div className="mb-6">
+            <div className="mb-3">
 
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900">
                 Welcome Back
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-0.5 text-[10px] text-slate-500">
                 Select your role and sign in
               </p>
 
             </div>
 
+            {/* ROLE SELECTION */}
 
-            {/* ================= ROLE SELECTION ================= */}
+            <div className="mb-3">
 
-            <div className="mb-6">
-
-              <label className="mb-2 block text-sm font-semibold text-slate-700">
+              <label className="mb-1.5 block text-[11px] font-semibold text-slate-700">
                 Login As
               </label>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-1.5">
 
                 {/* ADMIN */}
 
@@ -169,41 +170,36 @@ const Login = () => {
                     setRole("ADMIN");
                     setError("");
                   }}
-                  className={`rounded-xl border p-4 text-left transition ${
+                  className={`rounded-lg border p-2 text-left transition ${
                     role === "ADMIN"
                       ? "border-blue-600 bg-blue-50 text-blue-700"
                       : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
                   }`}
                 >
-
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
 
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                         role === "ADMIN"
                           ? "bg-blue-600 text-white"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
-                      <UserCog size={20} />
+                      <UserCog size={15} />
                     </div>
 
                     <div>
-
-                      <p className="font-semibold">
+                      <p className="text-[11px] font-semibold">
                         Admin
                       </p>
 
-                      <p className="text-xs opacity-70">
+                      <p className="text-[8px] opacity-70">
                         Management
                       </p>
-
                     </div>
 
                   </div>
-
                 </button>
-
 
                 {/* WAITER */}
 
@@ -213,66 +209,141 @@ const Login = () => {
                     setRole("WAITER");
                     setError("");
                   }}
-                  className={`rounded-xl border p-4 text-left transition ${
+                  className={`rounded-lg border p-2 text-left transition ${
                     role === "WAITER"
                       ? "border-blue-600 bg-blue-50 text-blue-700"
                       : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
                   }`}
                 >
-
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
 
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
                         role === "WAITER"
                           ? "bg-blue-600 text-white"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
-                      <UserRound size={20} />
+                      <UserRound size={15} />
                     </div>
 
                     <div>
-
-                      <p className="font-semibold">
+                      <p className="text-[11px] font-semibold">
                         Waiter
                       </p>
 
-                      <p className="text-xs opacity-70">
+                      <p className="text-[8px] opacity-70">
                         Staff
                       </p>
-
                     </div>
 
                   </div>
+                </button>
 
+                {/* KITCHEN */}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRole("KITCHEN");
+                    setError("");
+                  }}
+                  className={`rounded-lg border p-2 text-left transition ${
+                    role === "KITCHEN"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                        role === "KITCHEN"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      <ChefHat size={15} />
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-semibold">
+                        Kitchen
+                      </p>
+
+                      <p className="text-[8px] opacity-70">
+                        Kitchen Staff
+                      </p>
+                    </div>
+
+                  </div>
+                </button>
+
+                {/* CASHIER */}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRole("CASHIER");
+                    setError("");
+                  }}
+                  className={`rounded-lg border p-2 text-left transition ${
+                    role === "CASHIER"
+                      ? "border-blue-600 bg-blue-50 text-blue-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
+                        role === "CASHIER"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      <WalletCards size={15} />
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-semibold">
+                        Cashier
+                      </p>
+
+                      <p className="text-[8px] opacity-70">
+                        Billing
+                      </p>
+                    </div>
+
+                  </div>
                 </button>
 
               </div>
 
             </div>
 
-
-            {/* ================= ERROR ================= */}
+            {/* ERROR */}
 
             {error && (
-              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[10px] font-medium text-red-600">
                 {error}
               </div>
             )}
 
+            {/* FORM */}
 
-            {/* ================= FORM ================= */}
-
-            <form onSubmit={handleLogin}>
+            <form
+              onSubmit={handleLogin}
+              autoComplete="off"
+            >
 
               {/* EMAIL */}
 
-              <div className="mb-4">
+              <div className="mb-2.5">
 
                 <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  htmlFor="login-email"
+                  className="mb-1 block text-[11px] font-semibold text-slate-700"
                 >
                   Email
                 </label>
@@ -280,33 +351,36 @@ const Login = () => {
                 <div className="relative">
 
                   <UserRound
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={15}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
                   <input
-                    id="email"
+                    id="login-email"
+                    name="login-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) =>
+                      setEmail(e.target.value)
+                    }
                     placeholder="Enter your email"
                     required
                     disabled={loading}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    autoComplete="off"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                   />
 
                 </div>
 
               </div>
 
-
               {/* PASSWORD */}
 
-              <div className="mb-6">
+              <div className="mb-3.5">
 
                 <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-semibold text-slate-700"
+                  htmlFor="login-password"
+                  className="mb-1 block text-[11px] font-semibold text-slate-700"
                 >
                   Password
                 </label>
@@ -314,33 +388,43 @@ const Login = () => {
                 <div className="relative">
 
                   <LockKeyhole
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={15}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
                   <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
+                    id="login-password"
+                    name="login-password"
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) =>
+                      setPassword(e.target.value)
+                    }
                     placeholder="Enter your password"
                     required
                     disabled={loading}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    autoComplete="new-password"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-8 pr-9 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                   />
 
                   <button
                     type="button"
                     onClick={() =>
-                      setShowPassword(!showPassword)
+                      setShowPassword(
+                        !showPassword
+                      )
                     }
                     disabled={loading}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
                   >
                     {showPassword ? (
-                      <EyeOff size={18} />
+                      <EyeOff size={15} />
                     ) : (
-                      <Eye size={18} />
+                      <Eye size={15} />
                     )}
                   </button>
 
@@ -348,39 +432,41 @@ const Login = () => {
 
               </div>
 
-
               {/* LOGIN BUTTON */}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-600 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-
-                <LogIn size={19} />
+                <LogIn size={16} />
 
                 {loading
                   ? "Signing in..."
                   : `Login as ${
                       role === "ADMIN"
                         ? "Admin"
-                        : "Waiter"
+                        : role === "WAITER"
+                        ? "Waiter"
+                        : role === "KITCHEN"
+                        ? "Kitchen"
+                        : "Cashier"
                     }`}
-
               </button>
 
             </form>
 
           </div>
 
-
           {/* BACK HOME */}
 
           <button
             type="button"
-            onClick={() => navigate("/home")}
+            onClick={() =>
+              navigate("/home")
+            }
             disabled={loading}
-            className="mt-5 w-full text-center text-sm font-medium text-slate-500 transition hover:text-blue-600"
+            className="mt-3 w-full text-center text-[10px] font-medium text-slate-500 transition hover:text-blue-600"
           >
             Back to Home
           </button>

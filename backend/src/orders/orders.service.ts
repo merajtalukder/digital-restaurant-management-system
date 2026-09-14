@@ -50,7 +50,8 @@ export class OrdersService {
     // ONLY FOR WAITER ORDER
     // =========================
 
-    let validWaiterId: number | undefined = undefined;
+    let validWaiterId: number | undefined =
+      undefined;
 
     if (data.orderType === 'WAITER') {
       if (
@@ -96,10 +97,9 @@ export class OrdersService {
     // GET MENU ITEMS
     // =========================
 
-    const menuItemIds =
-      data.items.map(
-        (item) => Number(item.menuItemId),
-      );
+    const menuItemIds = data.items.map(
+      (item) => Number(item.menuItemId),
+    );
 
     const menuItems =
       await this.prisma.menuItem.findMany({
@@ -124,12 +124,14 @@ export class OrdersService {
 
     let totalAmount = 0;
 
-    const orderItems =
-      data.items.map((item) => {
+    const orderItems = data.items.map(
+      (item) => {
         const menuItem =
           menuItems.find(
             (menu) =>
-              menu.id === Number(item.menuItemId),
+              menu.id === Number(
+                item.menuItemId,
+              ),
           );
 
         if (!menuItem) {
@@ -138,7 +140,9 @@ export class OrdersService {
           );
         }
 
-        const quantity = Number(item.quantity);
+        const quantity = Number(
+          item.quantity,
+        );
 
         if (
           isNaN(quantity) ||
@@ -157,6 +161,16 @@ export class OrdersService {
 
         totalAmount += subtotal;
 
+        // =========================
+        // SPECIAL INSTRUCTIONS
+        // =========================
+
+        const specialInstructions =
+          typeof item.specialInstructions ===
+          'string'
+            ? item.specialInstructions.trim()
+            : null;
+
         return {
           menuItemId: Number(
             item.menuItemId,
@@ -164,8 +178,10 @@ export class OrdersService {
           quantity,
           unitPrice,
           subtotal,
+          specialInstructions,
         };
-      });
+      },
+    );
 
     // =========================
     // GENERATE ORDER NUMBER
@@ -175,13 +191,22 @@ export class OrdersService {
       `ORD-${Date.now()}`;
 
     // =========================
-    // CREATE ORDER + UPDATE TABLE
+    // CREATE ORDER
+    // UPDATE TABLE
     // USING TRANSACTION
+    //
+    // IMPORTANT:
+    // PAYMENT IS NOT CREATED HERE.
+    // PAYMENT WILL BE CREATED ONLY
+    // WHEN CUSTOMER / WAITER PAYS.
     // =========================
 
     return this.prisma.$transaction(
       async (tx) => {
-        // Update table status
+        // =========================
+        // UPDATE TABLE STATUS
+        // =========================
+
         await tx.restaurantTable.update({
           where: {
             id: Number(data.tableId),
@@ -191,7 +216,10 @@ export class OrdersService {
           },
         });
 
-        // Create order
+        // =========================
+        // CREATE ORDER
+        // =========================
+
         const order =
           await tx.order.create({
             data: {
@@ -215,6 +243,10 @@ export class OrdersService {
                   }
                 : {}),
 
+              // =========================
+              // ORDER ITEMS
+              // =========================
+
               orderItems: {
                 create: orderItems,
               },
@@ -231,6 +263,7 @@ export class OrdersService {
                 },
               },
 
+              // Payment does NOT exist yet.
               payment: true,
             },
           });
@@ -324,7 +357,7 @@ export class OrdersService {
     }
 
     // =========================
-    // ADD NEW ITEM TO SAME BILL
+    // ADD NEW ITEM TO SAME ORDER
     // =========================
 
     if (
@@ -372,6 +405,16 @@ export class OrdersService {
 
               additionalAmount += subtotal;
 
+              // =========================
+              // SPECIAL INSTRUCTIONS
+              // =========================
+
+              const specialInstructions =
+                typeof item.specialInstructions ===
+                'string'
+                  ? item.specialInstructions.trim()
+                  : null;
+
               return {
                 orderId: id,
 
@@ -385,26 +428,84 @@ export class OrdersService {
                 unitPrice,
 
                 subtotal,
+
+                specialInstructions,
               };
             },
           ),
         );
 
+      // =========================
+      // CREATE NEW ORDER ITEMS
+      // =========================
+
       await this.prisma.orderItem.createMany({
         data: orderItems,
       });
 
-      return this.prisma.order.update({
+      // =========================
+      // UPDATE ORDER TOTAL
+      // =========================
+
+      const updatedOrder =
+        await this.prisma.order.update({
+          where: {
+            id,
+          },
+
+          data: {
+            totalAmount:
+              Number(
+                existingOrder.totalAmount,
+              ) +
+              additionalAmount,
+          },
+
+          include: {
+            table: true,
+
+            waiter: true,
+
+            orderItems: {
+              include: {
+                menuItem: true,
+              },
+            },
+
+            payment: true,
+          },
+        });
+
+      // =========================
+      // IMPORTANT
+      //
+      // PAYMENT MAY NOT EXIST YET.
+      //
+      // If payment already exists,
+      // update its amount.
+      // Otherwise do nothing.
+      // =========================
+
+      if (updatedOrder.payment) {
+        await this.prisma.payment.update({
+          where: {
+            id: updatedOrder.payment.id,
+          },
+
+          data: {
+            amount:
+              updatedOrder.totalAmount,
+          },
+        });
+      }
+
+      // =========================
+      // RETURN UPDATED ORDER
+      // =========================
+
+      return this.prisma.order.findUnique({
         where: {
           id,
-        },
-
-        data: {
-          totalAmount:
-            Number(
-              existingOrder.totalAmount,
-            ) +
-            additionalAmount,
         },
 
         include: {
@@ -500,17 +601,29 @@ export class OrdersService {
 
     await this.prisma.$transaction(
       async (tx) => {
+        // =========================
+        // DELETE PAYMENT IF EXISTS
+        // =========================
+
         await tx.payment.deleteMany({
           where: {
             orderId: id,
           },
         });
 
+        // =========================
+        // DELETE ORDER ITEMS
+        // =========================
+
         await tx.orderItem.deleteMany({
           where: {
             orderId: id,
           },
         });
+
+        // =========================
+        // DELETE ORDER
+        // =========================
 
         await tx.order.delete({
           where: {

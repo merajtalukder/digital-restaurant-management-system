@@ -1,6 +1,9 @@
 export class CreateOrderItemDto {
   menuItemId!: number;
+
   quantity!: number;
+
+  specialInstructions?: string;
 }
 
 export class CreateOrderDto {

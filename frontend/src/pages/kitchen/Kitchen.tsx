@@ -1,12 +1,13 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import {
   ChefHat,
   Clock3,
   CheckCircle2,
   Utensils,
   RefreshCw,
-  Users,
   ArrowRight,
+  MessageSquareText,
+  AlertCircle,
 } from "lucide-react";
 
 const API_URL = "http://localhost:3000";
@@ -37,16 +38,12 @@ interface Table {
   status: string;
 }
 
-interface Waiter {
-  id: number;
-  name: string;
-}
-
 interface OrderItem {
   id: number;
   quantity: number;
   unitPrice: string | number;
   subtotal: string | number;
+  specialInstructions?: string | null;
   menuItem: MenuItem;
 }
 
@@ -58,7 +55,6 @@ interface Order {
   status: OrderStatus;
   totalAmount: string | number;
   table: Table;
-  waiter: Waiter;
   orderItems: OrderItem[];
   createdAt: string;
 }
@@ -80,9 +76,9 @@ const statusInfo: Record<
   },
   PREPARING: {
     label: "Preparing",
-    badge: "bg-blue-50 text-blue-700 border-blue-200",
-    dot: "bg-blue-500",
-    border: "border-l-blue-500",
+    badge: "bg-violet-50 text-violet-700 border-violet-200",
+    dot: "bg-violet-500",
+    border: "border-l-violet-500",
   },
   READY: {
     label: "Ready",
@@ -124,13 +120,15 @@ const Kitchen = () => {
       const response = await fetch(`${API_URL}/orders`);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch orders.");
+        throw new Error("Failed to fetch orders");
       }
 
       const data: Order[] = await response.json();
+
       setOrders(data);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+
       setError(
         "Could not load kitchen orders. Please check your backend server."
       );
@@ -143,7 +141,10 @@ const Kitchen = () => {
     fetchOrders();
   }, []);
 
-  const updateStatus = async (id: number, status: OrderStatus) => {
+  const updateStatus = async (
+    id: number,
+    status: OrderStatus
+  ) => {
     try {
       setUpdatingId(id);
 
@@ -156,28 +157,33 @@ const Kitchen = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update order status.");
+        throw new Error("Failed to update order status");
       }
 
       const updatedOrder: Order = await response.json();
 
       setOrders((current) =>
         current.map((order) =>
-          order.id === id ? { ...order, ...updatedOrder } : order
+          order.id === id
+            ? { ...order, ...updatedOrder }
+            : order
         )
       );
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       alert("Failed to update order status.");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const getNextStatus = (status: OrderStatus): OrderStatus | null => {
+  const getNextStatus = (
+    status: OrderStatus
+  ): OrderStatus | null => {
     if (status === "PENDING") return "PREPARING";
     if (status === "PREPARING") return "READY";
     if (status === "READY") return "SERVED";
+
     return null;
   };
 
@@ -216,9 +222,61 @@ const Kitchen = () => {
     ["PENDING", "PREPARING", "READY"].includes(order.status)
   );
 
+  const renderSpecialInstructions = (
+    instructions?: string | null
+  ) => {
+    const text = instructions?.trim();
+
+    if (!text) {
+      return null;
+    }
+
+    const instructionParts = text
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    return (
+      <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <MessageSquareText
+            size={12}
+            className="shrink-0 text-amber-600"
+          />
+
+          <span className="text-[9px] font-bold uppercase tracking-wide text-amber-700">
+            Special Instructions
+          </span>
+        </div>
+
+        <div className="space-y-1">
+          {instructionParts.length > 0 ? (
+            instructionParts.map((instruction, index) => (
+              <div
+                key={`${instruction}-${index}`}
+                className="flex items-start gap-1.5 text-[10px] font-medium leading-relaxed text-amber-900"
+              >
+                <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-500" />
+                <span>{instruction}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-[10px] text-amber-900">
+              {text}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderOrderCard = (order: Order) => {
     const nextStatus = getNextStatus(order.status);
     const info = statusInfo[order.status];
+
+    const customizedItemCount = order.orderItems.filter(
+      (item) => item.specialInstructions?.trim()
+    ).length;
 
     return (
       <div
@@ -230,7 +288,7 @@ const Kitchen = () => {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white">
                   <ChefHat size={16} />
                 </span>
 
@@ -252,8 +310,17 @@ const Kitchen = () => {
                 </span>
 
                 <span className="rounded-md bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-700">
-                  {order.orderType === "WAITER" ? "Waiter" : "QR Order"}
+                  {order.orderType === "WAITER"
+                    ? "Waiter"
+                    : "QR Order"}
                 </span>
+
+                {customizedItemCount > 0 && (
+                  <span className="flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">
+                    <MessageSquareText size={11} />
+                    {customizedItemCount} customized
+                  </span>
+                )}
               </div>
 
               {order.customerName && (
@@ -269,6 +336,7 @@ const Kitchen = () => {
               <span
                 className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${info.dot}`}
               />
+
               {info.label}
             </span>
           </div>
@@ -278,7 +346,11 @@ const Kitchen = () => {
         <div className="space-y-2 p-4">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Utensils size={13} className="text-emerald-500" />
+              <Utensils
+                size={13}
+                className="text-emerald-500"
+              />
+
               <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
                 Items
               </span>
@@ -286,35 +358,58 @@ const Kitchen = () => {
 
             <span className="text-[11px] font-medium text-slate-400">
               {order.orderItems.length}{" "}
-              {order.orderItems.length === 1 ? "item" : "items"}
+              {order.orderItems.length === 1
+                ? "item"
+                : "items"}
             </span>
           </div>
 
           {order.orderItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-2.5"
+              className="rounded-xl bg-slate-50 p-2.5"
             >
-              <div className="min-w-0">
-                <p className="truncate text-xs font-bold text-slate-800">
-                  {item.menuItem.name}
-                </p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-bold text-slate-800">
+                    {item.menuItem.name}
+                  </p>
 
-                <span
-                  className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[9px] font-semibold ${getFoodStyle(
-                    item.menuItem.foodType
-                  )}`}
-                >
-                  {getFoodType(item.menuItem.foodType)}
+                  <span
+                    className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[9px] font-semibold ${getFoodStyle(
+                      item.menuItem.foodType
+                    )}`}
+                  >
+                    {getFoodType(item.menuItem.foodType)}
+                  </span>
+                </div>
+
+                <span className="flex h-7 min-w-9 shrink-0 items-center justify-center rounded-lg bg-white px-2 text-xs font-bold text-slate-800 shadow-sm">
+                  × {item.quantity}
                 </span>
               </div>
 
-              <span className="flex h-7 min-w-9 shrink-0 items-center justify-center rounded-lg bg-white px-2 text-xs font-bold text-slate-800 shadow-sm">
-                × {item.quantity}
-              </span>
+              {renderSpecialInstructions(
+                item.specialInstructions
+              )}
             </div>
           ))}
         </div>
+
+        {/* Kitchen Notice */}
+        {customizedItemCount > 0 && (
+          <div className="mx-4 mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+            <AlertCircle
+              size={13}
+              className="mt-0.5 shrink-0 text-amber-600"
+            />
+
+            <p className="text-[10px] font-medium leading-relaxed text-amber-800">
+              Please check the special instructions before preparing
+              customized items.
+            </p>
+          </div>
+        )}
 
         {/* Action */}
         {nextStatus && (
@@ -322,7 +417,9 @@ const Kitchen = () => {
             <button
               type="button"
               disabled={updatingId === order.id}
-              onClick={() => updateStatus(order.id, nextStatus)}
+              onClick={() =>
+                updateStatus(order.id, nextStatus)
+              }
               className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 order.status === "READY"
                   ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
@@ -331,7 +428,10 @@ const Kitchen = () => {
             >
               {updatingId === order.id ? (
                 <>
-                  <RefreshCw size={14} className="animate-spin" />
+                  <RefreshCw
+                    size={14}
+                    className="animate-spin"
+                  />
                   Updating...
                 </>
               ) : (
@@ -358,7 +458,9 @@ const Kitchen = () => {
         <CheckCircle2 size={22} />
       </div>
 
-      <p className="text-xs font-medium text-slate-400">{text}</p>
+      <p className="text-xs font-medium text-slate-400">
+        {text}
+      </p>
     </div>
   );
 
@@ -367,16 +469,19 @@ const Kitchen = () => {
     count: number,
     columnOrders: Order[],
     dot: string,
-    icon: ReactNode,
+    icon: React.ReactNode,
     emptyText: string
   ) => (
     <section className="min-w-0">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${dot}`}
+          />
 
           <div className="flex items-center gap-1.5">
             {icon}
+
             <h3 className="text-sm font-bold text-slate-900">
               {title}
             </h3>
@@ -389,9 +494,11 @@ const Kitchen = () => {
       </div>
 
       <div className="space-y-3">
-        {columnOrders.length
-          ? columnOrders.map(renderOrderCard)
-          : <EmptyState text={emptyText} />}
+        {columnOrders.length ? (
+          columnOrders.map(renderOrderCard)
+        ) : (
+          <EmptyState text={emptyText} />
+        )}
       </div>
     </section>
   );
@@ -408,11 +515,11 @@ const Kitchen = () => {
 
             <div>
               <h2 className="text-xl font-bold tracking-tight text-slate-900">
-                Kitchen Display
+                Kitchen
               </h2>
 
               <p className="text-xs text-slate-500">
-                Manage active orders and food preparation
+                Manage food preparation and order status
               </p>
             </div>
           </div>
@@ -471,7 +578,7 @@ const Kitchen = () => {
           {
             label: "Active Orders",
             value: activeOrders.length,
-            icon: <Users size={16} />,
+            icon: <Utensils size={16} />,
             box: "bg-cyan-50 text-cyan-600",
           },
         ].map((stat) => (
@@ -517,7 +624,10 @@ const Kitchen = () => {
             pendingOrders.length,
             pendingOrders,
             "bg-amber-500",
-            <Clock3 size={14} className="text-amber-500" />,
+            <Clock3
+              size={14}
+              className="text-amber-500"
+            />,
             "No pending orders"
           )}
 
@@ -526,7 +636,10 @@ const Kitchen = () => {
             preparingOrders.length,
             preparingOrders,
             "bg-violet-500",
-            <ChefHat size={14} className="text-violet-500" />,
+            <ChefHat
+              size={14}
+              className="text-violet-500"
+            />,
             "No orders preparing"
           )}
 
@@ -535,7 +648,10 @@ const Kitchen = () => {
             readyOrders.length,
             readyOrders,
             "bg-emerald-500",
-            <CheckCircle2 size={14} className="text-emerald-500" />,
+            <CheckCircle2
+              size={14}
+              className="text-emerald-500"
+            />,
             "No ready orders"
           )}
         </div>

@@ -3,16 +3,23 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+import {
+  ShoppingBag,
+  Trash2,
+  Minus,
+  Plus,
+  ArrowRight,
+  Utensils,
+  MessageSquareText,
+  ChefHat,
+} from "lucide-react";
+
 import { useCart } from "../../context/CartContext";
 
 const Cart = () => {
+  const [searchParams] = useSearchParams();
 
-  const [searchParams] =
-    useSearchParams();
-
-  const tableId =
-    searchParams.get("tableId");
-
+  const tableId = searchParams.get("tableId");
 
   const {
     cartItems,
@@ -23,177 +30,398 @@ const Cart = () => {
     totalAmount,
   } = useCart();
 
-
-  const tableQuery =
-    tableId
-      ? `?tableId=${tableId}`
-      : "";
-
+  const tableQuery = tableId
+    ? `?tableId=${tableId}`
+    : "";
 
   // =========================
   // EMPTY CART
   // =========================
 
   if (cartItems.length === 0) {
-
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center">
+      <div className="min-h-[70vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-sm">
 
-        <h1 className="text-2xl font-bold text-gray-800 mb-3">
-          Your Cart is Empty
-        </h1>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+            <ShoppingBag size={30} />
+          </div>
 
-        <p className="text-gray-500 mb-6">
-          Add some delicious items to your cart.
-        </p>
+          <h1 className="mt-4 text-xl font-bold text-slate-800">
+            Your Cart is Empty
+          </h1>
 
-        <Link
-          to={`/customer/menu${tableQuery}`}
-          className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600"
-        >
-          Browse Menu
-        </Link>
+          <p className="mt-2 text-sm text-slate-500">
+            Add some delicious items to your cart.
+          </p>
 
+          <Link
+            to={`/customer/menu${tableQuery}`}
+            className="
+              mt-5 flex items-center justify-center gap-2
+              rounded-2xl
+              bg-gradient-to-r
+              from-emerald-500
+              via-teal-500
+              to-cyan-500
+              py-3
+              text-sm font-semibold
+              text-white
+              shadow-md
+              transition-all
+              hover:shadow-lg
+            "
+          >
+            Browse Menu
+            <ArrowRight size={17} />
+          </Link>
+
+        </div>
       </div>
     );
   }
 
-
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="min-h-full bg-slate-50 px-3 pb-24 pt-3 sm:px-4 sm:pt-4">
+      <div className="mx-auto max-w-3xl">
 
-      {/* PAGE TITLE */}
+        {/* =========================
+            PAGE TITLE
+        ========================= */}
 
-      <div className="flex justify-between items-center mb-6">
+        <div className="mb-4 flex items-center justify-between">
 
-        <h1 className="text-2xl font-bold text-gray-800">
-          Your Cart
-        </h1>
-
-        <button
-          onClick={clearCart}
-          className="text-red-500 font-medium hover:text-red-600"
-        >
-          Clear Cart
-        </button>
-
-      </div>
-
-
-      {/* TABLE INFO */}
-
-      {tableId && (
-        <div className="bg-orange-50 border border-orange-200 text-orange-700 rounded-lg p-3 mb-5">
-          Ordering from Table {tableId}
-        </div>
-      )}
-
-
-      {/* CART ITEMS */}
-
-      <div className="space-y-4">
-
-        {cartItems.map((item) => (
-
-          <div
-            key={item.id}
-            className="bg-white rounded-xl shadow p-4 flex justify-between items-center"
-          >
-
-            {/* ITEM INFO */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+              <ShoppingBag size={19} />
+            </div>
 
             <div>
+              <h1 className="text-xl font-bold text-slate-800">
+                Your Cart
+              </h1>
 
-              <h2 className="font-semibold text-lg text-gray-800">
-                {item.name}
-              </h2>
-
-              <p className="text-gray-500">
-                ৳{item.price} × {item.quantity}
+              <p className="text-[11px] text-slate-400">
+                Review your selected items
               </p>
+            </div>
+          </div>
 
-              <p className="font-semibold text-orange-500 mt-1">
-                ৳{item.price * item.quantity}
-              </p>
+          <button
+            onClick={clearCart}
+            className="
+              flex items-center gap-1.5
+              rounded-xl
+              px-2.5 py-2
+              text-xs font-semibold
+              text-red-500
+              transition
+              hover:bg-red-50
+            "
+          >
+            <Trash2 size={15} />
+            Clear
+          </button>
 
+        </div>
+
+        {/* =========================
+            TABLE INFO
+        ========================= */}
+
+        {tableId && (
+          <div
+            className="
+              mb-4 flex items-center gap-3
+              rounded-2xl
+              border border-emerald-100
+              bg-gradient-to-r
+              from-emerald-50
+              via-teal-50
+              to-cyan-50
+              p-3.5
+            "
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-emerald-500 shadow-sm">
+              <Utensils size={18} />
             </div>
 
+            <div>
+              <p className="text-[11px] text-slate-500">
+                Ordering from
+              </p>
 
-            {/* QUANTITY */}
-
-            <div className="flex items-center gap-3">
-
-              <button
-                onClick={() =>
-                  decreaseQuantity(item.id)
-                }
-                className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300"
-              >
-                -
-              </button>
-
-
-              <span className="font-semibold min-w-[20px] text-center">
-                {item.quantity}
-              </span>
-
-
-              <button
-                onClick={() =>
-                  increaseQuantity(item.id)
-                }
-                className="w-8 h-8 rounded-full bg-orange-500 text-white hover:bg-orange-600"
-              >
-                +
-              </button>
-
-
-              <button
-                onClick={() =>
-                  removeFromCart(item.id)
-                }
-                className="ml-3 text-red-500 hover:text-red-600"
-              >
-                Remove
-              </button>
-
+              <p className="text-sm font-bold text-emerald-600">
+                Table T-
+                {String(tableId).padStart(2, "0")}
+              </p>
             </div>
+          </div>
+        )}
+
+        {/* =========================
+            CART ITEMS
+        ========================= */}
+
+        <div className="space-y-3">
+
+          {cartItems.map((item) => {
+
+            const hasInstructions =
+              Boolean(item.specialInstructions?.trim());
+
+            return (
+              <div
+                key={`${item.id}-${item.specialInstructions || ""}`}
+                className="
+                  rounded-2xl
+                  bg-white
+                  p-3.5
+                  shadow-sm
+                  transition
+                  hover:shadow-md
+                "
+              >
+
+                {/* =========================
+                    ITEM
+                ========================= */}
+
+                <div className="flex items-center justify-between gap-3">
+
+                  <div className="min-w-0 flex-1">
+
+                    <h2 className="truncate text-sm font-bold text-slate-800 sm:text-base">
+                      {item.name}
+                    </h2>
+
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      ৳{Number(item.price).toFixed(2)} ×{" "}
+                      {item.quantity}
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-emerald-600">
+                      ৳
+                      {(
+                        Number(item.price) *
+                        Number(item.quantity)
+                      ).toFixed(2)}
+                    </p>
+
+                  </div>
+
+                  {/* =========================
+                      QUANTITY
+                  ========================= */}
+
+                  <div className="flex shrink-0 items-center gap-1.5">
+
+                    <button
+                      onClick={() =>
+                        decreaseQuantity(item.id)
+                      }
+                      className="
+                        flex h-8 w-8 items-center justify-center
+                        rounded-lg
+                        bg-slate-100
+                        text-slate-600
+                        transition
+                        hover:bg-slate-200
+                      "
+                    >
+                      <Minus size={15} />
+                    </button>
+
+                    <span className="flex min-w-[25px] justify-center text-sm font-bold text-slate-700">
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        increaseQuantity(item.id)
+                      }
+                      className="
+                        flex h-8 w-8 items-center justify-center
+                        rounded-lg
+                        bg-gradient-to-br
+                        from-emerald-500
+                        to-teal-500
+                        text-white
+                        shadow-sm
+                        transition
+                        hover:shadow-md
+                      "
+                    >
+                      <Plus size={15} />
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* =========================
+                    SPECIAL INSTRUCTIONS
+                ========================= */}
+
+                {hasInstructions && (
+                  <div
+                    className="
+                      mt-3
+                      rounded-xl
+                      border border-amber-100
+                      bg-amber-50
+                      p-3
+                    "
+                  >
+
+                    <div className="flex items-start gap-2">
+
+                      <div
+                        className="
+                          mt-0.5
+                          flex h-7 w-7 shrink-0
+                          items-center justify-center
+                          rounded-lg
+                          bg-white
+                          text-amber-500
+                          shadow-sm
+                        "
+                      >
+                        <MessageSquareText size={15} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">
+                            Special Instructions
+                          </p>
+
+                          <ChefHat
+                            size={13}
+                            className="text-amber-500"
+                          />
+                        </div>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-600">
+                          {item.specialInstructions}
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+                )}
+
+                {/* =========================
+                    NO INSTRUCTION MESSAGE
+                ========================= */}
+
+                {!hasInstructions && (
+                  <div
+                    className="
+                      mt-3
+                      flex items-center gap-2
+                      rounded-xl
+                      border border-slate-100
+                      bg-slate-50
+                      px-3 py-2
+                    "
+                  >
+                    <MessageSquareText
+                      size={14}
+                      className="text-slate-400"
+                    />
+
+                    <p className="text-[11px] text-slate-400">
+                      No special instructions
+                    </p>
+                  </div>
+                )}
+
+                {/* =========================
+                    REMOVE
+                ========================= */}
+
+                <div className="mt-2.5 flex justify-end border-t border-slate-100 pt-2">
+
+                  <button
+                    onClick={() =>
+                      removeFromCart(item.id)
+                    }
+                    className="
+                      flex items-center gap-1
+                      text-[11px] font-medium
+                      text-red-400
+                      transition
+                      hover:text-red-500
+                    "
+                  >
+                    <Trash2 size={13} />
+                    Remove
+                  </button>
+
+                </div>
+
+              </div>
+            );
+          })}
+
+        </div>
+
+        {/* =========================
+            TOTAL
+        ========================= */}
+
+        <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+              <p className="text-xs text-slate-400">
+                Total Amount
+              </p>
+
+              <p className="mt-0.5 text-lg font-bold text-slate-800">
+                Order Total
+              </p>
+            </div>
+
+            <span className="text-xl font-bold text-emerald-600">
+              ৳{Number(totalAmount).toFixed(2)}
+            </span>
 
           </div>
 
-        ))}
+          {/* =========================
+              CHECKOUT
+          ========================= */}
 
-      </div>
-
-
-      {/* TOTAL */}
-
-      <div className="bg-white mt-6 p-5 rounded-xl shadow">
-
-        <div className="flex justify-between text-lg font-bold">
-
-          <span>
-            Total
-          </span>
-
-          <span>
-            ৳{totalAmount}
-          </span>
+          <Link
+            to={`/customer/checkout${tableQuery}`}
+            className="
+              mt-4 flex items-center justify-center gap-2
+              rounded-2xl
+              bg-gradient-to-r
+              from-emerald-500
+              via-teal-500
+              to-cyan-500
+              py-3
+              text-sm font-semibold
+              text-white
+              shadow-md
+              transition-all
+              hover:shadow-lg
+            "
+          >
+            Proceed to Checkout
+            <ArrowRight size={17} />
+          </Link>
 
         </div>
 
-
-        {/* CHECKOUT */}
-
-        <Link
-          to={`/customer/checkout${tableQuery}`}
-          className="block text-center mt-5 bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600"
-        >
-          Proceed to Checkout
-        </Link>
-
       </div>
-
     </div>
   );
 };

@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Users,
+  CheckCircle2,
+  Clock3,
+  CalendarCheck,
+  X,
+} from "lucide-react";
 
-type TableStatus =
-  | "AVAILABLE"
-  | "OCCUPIED"
-  | "RESERVED";
+type TableStatus = "AVAILABLE" | "OCCUPIED" | "RESERVED";
 
 interface RestaurantTable {
   id: number;
@@ -20,8 +27,7 @@ const Tables = () => {
 
   const [tableNumber, setTableNumber] = useState("");
   const [capacity, setCapacity] = useState("");
-  const [status, setStatus] =
-    useState<TableStatus>("AVAILABLE");
+  const [status, setStatus] = useState<TableStatus>("AVAILABLE");
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] =
@@ -29,10 +35,6 @@ const Tables = () => {
 
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // =========================
-  // GET TABLES
-  // =========================
 
   const fetchTables = async () => {
     try {
@@ -45,7 +47,6 @@ const Tables = () => {
       }
 
       const data = await response.json();
-
       setTables(data);
     } catch (error) {
       console.error(error);
@@ -59,9 +60,13 @@ const Tables = () => {
     fetchTables();
   }, []);
 
-  // =========================
-  // SAVE / UPDATE
-  // =========================
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setTableNumber("");
+    setCapacity("");
+    setStatus("AVAILABLE");
+  };
 
   const handleSave = async () => {
     if (!tableNumber.trim()) {
@@ -84,22 +89,15 @@ const Tables = () => {
       let response;
 
       if (editingId !== null) {
-        response = await fetch(
-          `${API_URL}/${editingId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(tableData),
-          }
-        );
+        response = await fetch(`${API_URL}/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tableData),
+        });
       } else {
         response = await fetch(API_URL, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tableData),
         });
       }
@@ -116,44 +114,28 @@ const Tables = () => {
     }
   };
 
-  // =========================
-  // EDIT
-  // =========================
-
   const handleEdit = (table: RestaurantTable) => {
     setEditingId(table.id);
     setTableNumber(String(table.tableNumber));
     setCapacity(String(table.capacity));
     setStatus(table.status);
-
-    // Edit korle form show hobe
     setShowForm(true);
 
-    // Page automatically form-er dike jabe
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   };
 
-  // =========================
-  // DELETE
-  // =========================
-
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this table?"
-    );
-
-    if (!confirmed) return;
+    if (!window.confirm("Are you sure you want to delete this table?")) {
+      return;
+    }
 
     try {
-      const response = await fetch(
-        `${API_URL}/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete table.");
@@ -166,274 +148,163 @@ const Tables = () => {
     }
   };
 
-  // =========================
-  // RESET FORM
-  // =========================
-
-  const resetForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setTableNumber("");
-    setCapacity("");
-    setStatus("AVAILABLE");
-  };
-
-  // =========================
-  // FILTER
-  // =========================
-
   const filteredTables = tables.filter((table) => {
     const matchesSearch = String(table.tableNumber)
       .toLowerCase()
       .includes(search.toLowerCase());
 
     const matchesStatus =
-      filterStatus === "All" ||
-      table.status === filterStatus;
+      filterStatus === "All" || table.status === filterStatus;
 
     return matchesSearch && matchesStatus;
   });
 
-  // =========================
-  // STATUS STYLE
-  // =========================
-
-  const getStatusClass = (
-    tableStatus: TableStatus
-  ) => {
-    switch (tableStatus) {
-      case "AVAILABLE":
-        return "bg-green-50 text-green-700 border-green-200";
-
-      case "OCCUPIED":
-        return "bg-red-50 text-red-700 border-red-200";
-
-      case "RESERVED":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  // =========================
-  // STATUS LABEL
-  // =========================
-
-  const getStatusLabel = (
-    tableStatus: TableStatus
-  ) => {
-    switch (tableStatus) {
-      case "AVAILABLE":
-        return "Available";
-
-      case "OCCUPIED":
-        return "Occupied";
-
-      case "RESERVED":
-        return "Reserved";
-
-      default:
-        return tableStatus;
-    }
-  };
-
-  // =========================
-  // STATUS DOT
-  // =========================
-
-  const getStatusDot = (
-    tableStatus: TableStatus
-  ) => {
-    switch (tableStatus) {
-      case "AVAILABLE":
-        return "bg-green-500";
-
-      case "OCCUPIED":
-        return "bg-red-500";
-
-      case "RESERVED":
-        return "bg-yellow-500";
-
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  // =========================
-  // STATISTICS
-  // =========================
-
   const totalTables = tables.length;
-
   const availableTables = tables.filter(
-    (table) => table.status === "AVAILABLE"
+    (t) => t.status === "AVAILABLE"
   ).length;
-
   const occupiedTables = tables.filter(
-    (table) => table.status === "OCCUPIED"
+    (t) => t.status === "OCCUPIED"
+  ).length;
+  const reservedTables = tables.filter(
+    (t) => t.status === "RESERVED"
   ).length;
 
-  const reservedTables = tables.filter(
-    (table) => table.status === "RESERVED"
-  ).length;
+  const statusConfig = {
+    AVAILABLE: {
+      label: "Available",
+      badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+      icon: "bg-emerald-100 text-emerald-600",
+      dot: "bg-emerald-500",
+    },
+    OCCUPIED: {
+      label: "Occupied",
+      badge: "bg-red-50 text-red-700 ring-red-200",
+      icon: "bg-red-100 text-red-600",
+      dot: "bg-red-500",
+    },
+    RESERVED: {
+      label: "Reserved",
+      badge: "bg-amber-50 text-amber-700 ring-amber-200",
+      icon: "bg-amber-100 text-amber-600",
+      dot: "bg-amber-500",
+    },
+  };
+
+  const stats = [
+    {
+      label: "Total Tables",
+      value: totalTables,
+      icon: Users,
+      style: "bg-slate-100 text-slate-600",
+    },
+    {
+      label: "Available",
+      value: availableTables,
+      icon: CheckCircle2,
+      style: "bg-emerald-100 text-emerald-600",
+    },
+    {
+      label: "Occupied",
+      value: occupiedTables,
+      icon: Clock3,
+      style: "bg-red-100 text-red-600",
+    },
+    {
+      label: "Reserved",
+      value: reservedTables,
+      icon: CalendarCheck,
+      style: "bg-violet-100 text-violet-600",
+    },
+  ];
 
   return (
-    <div className="w-full min-w-0">
-
-      {/* ================= HEADER ================= */}
-
-      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-5 lg:p-6">
+      {/* HEADER */}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-2xl font-bold text-slate-800">
             Tables
-          </h2>
+          </h1>
 
-          <p className="mt-2 text-gray-600">
-            Manage restaurant tables and seating availability
+          <p className="mt-0.5 text-sm text-slate-500">
+            Manage restaurant tables and seating
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-            }
+            if (showForm) resetForm();
+            else setShowForm(true);
           }}
-          className="w-full rounded-xl bg-gray-900 px-5 py-3 font-medium text-white shadow-sm transition hover:bg-gray-800 sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-200 transition hover:-translate-y-0.5"
         >
-          {showForm ? "Close Form" : "+ Add Table"}
+          {showForm ? <X size={17} /> : <Plus size={17} />}
+          {showForm ? "Close Form" : "Add Table"}
         </button>
-
       </div>
 
-      {/* ================= STATISTICS ================= */}
+      {/* STATS */}
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
 
-      <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
+          return (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">
+                    {stat.label}
+                  </p>
 
-        {/* Total */}
+                  <p className="mt-1 text-2xl font-bold text-slate-800">
+                    {stat.value}
+                  </p>
+                </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Total Tables
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-gray-800">
-                {totalTables}
-              </p>
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.style}`}
+                >
+                  <Icon size={19} />
+                </div>
+              </div>
             </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-xl">
-              🍽️
-            </div>
-
-          </div>
-        </div>
-
-        {/* Available */}
-
-        <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Available
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-green-600">
-                {availableTables}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-50">
-              <span className="h-3 w-3 rounded-full bg-green-500" />
-            </div>
-
-          </div>
-        </div>
-
-        {/* Occupied */}
-
-        <div className="rounded-2xl border border-red-100 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Occupied
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-red-600">
-                {occupiedTables}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50">
-              <span className="h-3 w-3 rounded-full bg-red-500" />
-            </div>
-
-          </div>
-        </div>
-
-        {/* Reserved */}
-
-        <div className="rounded-2xl border border-yellow-100 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                Reserved
-              </p>
-
-              <p className="mt-2 text-3xl font-bold text-yellow-600">
-                {reservedTables}
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-50">
-              <span className="h-3 w-3 rounded-full bg-yellow-500" />
-            </div>
-
-          </div>
-        </div>
-
+          );
+        })}
       </div>
 
-      {/* ================= FORM ================= */}
-
+      {/* FORM */}
       {showForm && (
-        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-
-          <div className="mb-6 flex items-center justify-between">
-
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">
-                {editingId !== null
-                  ? "Edit Table"
-                  : "Add New Table"}
-              </h3>
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingId !== null ? "Edit Table" : "Add New Table"}
+              </h2>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-0.5 text-xs text-slate-400">
                 {editingId !== null
                   ? "Update table information."
                   : "Create a new restaurant table."}
               </p>
             </div>
 
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-lg bg-slate-100 p-2 text-slate-500 hover:bg-slate-200"
+            >
+              <X size={16} />
+            </button>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-3">
-
-            {/* Table Number */}
-
+          <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-xs font-semibold text-slate-600">
                 Table Number
               </label>
 
@@ -441,18 +312,14 @@ const Tables = () => {
                 type="number"
                 min="1"
                 value={tableNumber}
-                onChange={(e) =>
-                  setTableNumber(e.target.value)
-                }
+                onChange={(e) => setTableNumber(e.target.value)}
                 placeholder="e.g. 1"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-100"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
               />
             </div>
 
-            {/* Capacity */}
-
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-xs font-semibold text-slate-600">
                 Capacity
               </label>
 
@@ -460,303 +327,193 @@ const Tables = () => {
                 type="number"
                 min="1"
                 value={capacity}
-                onChange={(e) =>
-                  setCapacity(e.target.value)
-                }
+                onChange={(e) => setCapacity(e.target.value)}
                 placeholder="e.g. 4"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-100"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
               />
             </div>
 
-            {/* Status */}
-
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-xs font-semibold text-slate-600">
                 Status
               </label>
 
               <select
                 value={status}
                 onChange={(e) =>
-                  setStatus(
-                    e.target.value as TableStatus
-                  )
+                  setStatus(e.target.value as TableStatus)
                 }
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-100"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
               >
-                <option value="AVAILABLE">
-                  Available
-                </option>
-
-                <option value="OCCUPIED">
-                  Occupied
-                </option>
-
-                <option value="RESERVED">
-                  Reserved
-                </option>
+                <option value="AVAILABLE">Available</option>
+                <option value="OCCUPIED">Occupied</option>
+                <option value="RESERVED">Reserved</option>
               </select>
             </div>
-
           </div>
 
-          {/* Buttons */}
-
-          <div className="mt-6 flex flex-wrap gap-3">
-
+          <div className="mt-4 flex gap-2">
             <button
               type="button"
               onClick={handleSave}
-              className="rounded-xl bg-gray-900 px-6 py-3 font-medium text-white transition hover:bg-gray-800"
+              className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-teal-600"
             >
-              {editingId !== null
-                ? "Update Table"
-                : "Save Table"}
+              {editingId !== null ? "Update Table" : "Save Table"}
             </button>
 
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-xl bg-gray-100 px-6 py-3 font-medium text-gray-700 transition hover:bg-gray-200"
+              className="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-200"
             >
               Cancel
             </button>
-
           </div>
-
         </div>
       )}
 
-      {/* ================= SEARCH / FILTER ================= */}
+      {/* SEARCH + FILTER */}
+      <div className="mb-5 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+        <div className="grid gap-2.5 md:grid-cols-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search table number..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+          />
 
-      <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-
-        <div className="grid gap-4 md:grid-cols-2">
-
-          {/* Search */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Search Tables
-            </label>
-
-            <input
-              type="text"
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              placeholder="Search table number..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-100"
-            />
-          </div>
-
-          {/* Filter */}
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              Filter by Status
-            </label>
-
-            <select
-              value={filterStatus}
-              onChange={(e) =>
-                setFilterStatus(
-                  e.target.value as
-                    | TableStatus
-                    | "All"
-                )
-              }
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-gray-900 focus:ring-2 focus:ring-gray-100"
-            >
-              <option value="All">
-                All Tables
-              </option>
-
-              <option value="AVAILABLE">
-                Available
-              </option>
-
-              <option value="OCCUPIED">
-                Occupied
-              </option>
-
-              <option value="RESERVED">
-                Reserved
-              </option>
-            </select>
-          </div>
-
+          <select
+            value={filterStatus}
+            onChange={(e) =>
+              setFilterStatus(
+                e.target.value as TableStatus | "All"
+              )
+            }
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+          >
+            <option value="All">All Tables</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="OCCUPIED">Occupied</option>
+            <option value="RESERVED">Reserved</option>
+          </select>
         </div>
-
       </div>
 
-      {/* ================= CARD SECTION ================= */}
+      {/* LIST HEADER */}
+      <div className="mb-3 flex items-end justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">
+            Table List
+          </h2>
 
-      <div>
-
-        <div className="mb-5 flex items-center justify-between">
-
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800">
-              Table List
-            </h3>
-
-            <p className="mt-1 text-sm text-gray-500">
-              {filteredTables.length} table
-              {filteredTables.length !== 1
-                ? "s"
-                : ""}{" "}
-              found
-            </p>
-          </div>
-
+          <p className="text-xs text-slate-400">
+            {filteredTables.length} table
+            {filteredTables.length !== 1 ? "s" : ""} found
+          </p>
         </div>
+      </div>
 
-        {/* Loading */}
-
-        {loading ? (
-          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-14 text-center text-gray-500 shadow-sm">
-            Loading tables...
+      {/* TABLE LIST */}
+      {loading ? (
+        <div className="rounded-2xl border border-slate-100 bg-white py-12 text-center text-sm text-slate-500 shadow-sm">
+          Loading tables...
+        </div>
+      ) : filteredTables.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+            <Users size={22} />
           </div>
-        ) : filteredTables.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center shadow-sm">
 
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
-              🍽️
-            </div>
+          <h3 className="font-semibold text-slate-700">
+            No tables found
+          </h3>
 
-            <h3 className="font-semibold text-gray-800">
-              No tables found
-            </h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Try changing your search or filter.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredTables.map((table) => {
+            const config = statusConfig[table.status];
 
-            <p className="mt-1 text-sm text-gray-500">
-              Try changing your search or filter.
-            </p>
-
-          </div>
-        ) : (
-
-          /* RESPONSIVE CARD GRID */
-
-          <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-
-            {filteredTables.map((table) => (
-
+            return (
               <div
                 key={table.id}
-                className="group min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+                className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
-
-                {/* Card Top */}
-
+                {/* TOP */}
                 <div className="flex items-start justify-between">
-
                   <div>
-
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                       Table
                     </p>
 
-                    <h3 className="mt-1 text-3xl font-bold text-gray-800">
-                      T-
-                      {String(
-                        table.tableNumber
-                      ).padStart(2, "0")}
+                    <h3 className="mt-0.5 text-2xl font-extrabold text-slate-800">
+                      T-{String(table.tableNumber).padStart(2, "0")}
                     </h3>
-
                   </div>
 
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${
-                      table.status ===
-                      "AVAILABLE"
-                        ? "bg-green-50"
-                        : table.status ===
-                          "OCCUPIED"
-                        ? "bg-red-50"
-                        : "bg-yellow-50"
-                    }`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.icon}`}
                   >
                     <span
-                      className={`h-3 w-3 rounded-full ${getStatusDot(
-                        table.status
-                      )}`}
+                      className={`h-3 w-3 rounded-full ${config.dot}`}
                     />
                   </div>
-
                 </div>
 
-                {/* Capacity */}
+                {/* DETAILS */}
+                <div className="mt-4 space-y-2 border-t border-slate-100 pt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      Capacity
+                    </span>
 
-                <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <span className="text-sm font-semibold text-slate-700">
+                      {table.capacity} seats
+                    </span>
+                  </div>
 
-                  <span className="text-sm text-gray-500">
-                    Capacity
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      Status
+                    </span>
 
-                  <span className="font-semibold text-gray-800">
-                    {table.capacity} seats
-                  </span>
-
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-bold ring-1 ${config.badge}`}
+                    >
+                      {config.label}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Status */}
-
-                <div className="mt-3 flex items-center justify-between">
-
-                  <span className="text-sm text-gray-500">
-                    Status
-                  </span>
-
-                  <span
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusClass(
-                      table.status
-                    )}`}
-                  >
-                    {getStatusLabel(
-                      table.status
-                    )}
-                  </span>
-
-                </div>
-
-                {/* Actions */}
-
-                <div className="mt-5 grid grid-cols-2 gap-2">
-
+                {/* ACTIONS */}
+                <div className="mt-4 grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      handleEdit(table)
-                    }
-                    className="rounded-xl bg-gray-100 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                    onClick={() => handleEdit(table)}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-600 transition hover:bg-violet-100"
                   >
+                    <Pencil size={14} />
                     Edit
                   </button>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      handleDelete(table.id)
-                    }
-                    className="rounded-xl bg-red-50 px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
+                    onClick={() => handleDelete(table.id)}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100"
                   >
+                    <Trash2 size={14} />
                     Delete
                   </button>
-
                 </div>
-
               </div>
-
-            ))}
-
-          </div>
-
-        )}
-
-      </div>
-
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

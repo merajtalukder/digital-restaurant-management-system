@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  ClipboardList,
+  Utensils,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  Clock3,
+  ChefHat,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+
 import api from "../../api/axios";
 import { useCart } from "../../context/CartContext";
 
@@ -67,7 +79,10 @@ const MyOrders = () => {
             Number(customerTableNumber)
         );
 
-        console.log("Current Table Orders:", tableOrders);
+        console.log(
+          "Current Table Orders:",
+          tableOrders
+        );
 
         setOrders(tableOrders);
       } catch (err: any) {
@@ -101,25 +116,25 @@ const MyOrders = () => {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-amber-50 text-amber-600 border-amber-100";
 
       case "PREPARING":
-        return "bg-orange-100 text-orange-600";
+        return "bg-violet-50 text-violet-600 border-violet-100";
 
       case "READY":
-        return "bg-blue-100 text-blue-600";
+        return "bg-cyan-50 text-cyan-600 border-cyan-100";
 
       case "SERVED":
-        return "bg-green-100 text-green-600";
+        return "bg-emerald-50 text-emerald-600 border-emerald-100";
 
       case "COMPLETED":
-        return "bg-green-100 text-green-700";
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
 
       case "CANCELLED":
-        return "bg-red-100 text-red-600";
+        return "bg-red-50 text-red-600 border-red-100";
 
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-slate-50 text-slate-500 border-slate-100";
     }
   };
 
@@ -153,25 +168,52 @@ const MyOrders = () => {
   };
 
   // =========================
+  // STATUS ICON
+  // =========================
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return <Clock3 size={13} />;
+
+      case "PREPARING":
+        return <ChefHat size={13} />;
+
+      case "READY":
+        return <Utensils size={13} />;
+
+      case "SERVED":
+      case "COMPLETED":
+        return <CheckCircle2 size={13} />;
+
+      case "CANCELLED":
+        return <XCircle size={13} />;
+
+      default:
+        return <Clock3 size={13} />;
+    }
+  };
+
+  // =========================
   // NO TABLE SELECTED
   // =========================
 
   if (!customerTableNumber) {
     return (
-      <div className="py-10 text-center">
+      <div className="flex min-h-[65vh] items-center justify-center px-3">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500">
+            <Utensils size={27} />
+          </div>
 
-        <div className="text-5xl mb-4">
-          🪑
+          <h1 className="mt-4 text-xl font-bold text-slate-800">
+            Table Not Selected
+          </h1>
+
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Please enter through your table&apos;s QR code.
+          </p>
         </div>
-
-        <h1 className="text-2xl font-bold text-gray-800">
-          Table Not Selected
-        </h1>
-
-        <p className="text-gray-500 mt-2">
-          Please enter through your table's QR code.
-        </p>
-
       </div>
     );
   }
@@ -182,12 +224,19 @@ const MyOrders = () => {
 
   if (loading) {
     return (
-      <div className="py-10 text-center">
+      <div className="flex min-h-[65vh] items-center justify-center px-4">
+        <div className="rounded-2xl bg-white px-6 py-5 text-center shadow-sm">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50">
+            <Loader2
+              size={23}
+              className="animate-spin text-emerald-500"
+            />
+          </div>
 
-        <p className="text-gray-500">
-          Loading your orders...
-        </p>
-
+          <p className="mt-3 text-sm font-semibold text-slate-600">
+            Loading your orders...
+          </p>
+        </div>
       </div>
     );
   }
@@ -198,12 +247,23 @@ const MyOrders = () => {
 
   if (error) {
     return (
-      <div className="py-10">
+      <div className="px-3 py-8">
+        <div className="mx-auto flex max-w-md items-start gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-red-600">
+          <AlertCircle
+            size={20}
+            className="mt-0.5 shrink-0"
+          />
 
-        <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-5 text-center">
-          {error}
+          <div>
+            <p className="text-sm font-bold">
+              Unable to load orders
+            </p>
+
+            <p className="mt-1 text-xs leading-5">
+              {error}
+            </p>
+          </div>
         </div>
-
       </div>
     );
   }
@@ -214,28 +274,29 @@ const MyOrders = () => {
 
   if (orders.length === 0) {
     return (
-      <div className="py-10 text-center">
+      <div className="flex min-h-[65vh] items-center justify-center px-3">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-500">
+            <ClipboardList size={27} />
+          </div>
 
-        <div className="text-5xl mb-4">
-          📦
+          <h1 className="mt-4 text-xl font-bold text-slate-800">
+            No Orders Yet
+          </h1>
+
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            No orders found for Table{" "}
+            {customerTableNumber}.
+          </p>
+
+          <Link
+            to="/customer/menu"
+            className="mt-5 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+          >
+            <Utensils size={16} />
+            Browse Menu
+          </Link>
         </div>
-
-        <h1 className="text-2xl font-bold text-gray-800">
-          No Orders Yet
-        </h1>
-
-        <p className="text-gray-500 mt-2">
-          No orders found for Table{" "}
-          {customerTableNumber}.
-        </p>
-
-        <Link
-          to="/customer/menu"
-          className="inline-block mt-6 bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600"
-        >
-          Browse Menu
-        </Link>
-
       </div>
     );
   }
@@ -245,134 +306,124 @@ const MyOrders = () => {
   // =========================
 
   return (
-    <div className="py-6">
+    <div className="min-h-full bg-slate-50 px-3 pb-24 pt-4 sm:px-4 sm:pt-5">
+      <div className="mx-auto max-w-2xl">
 
-      {/* =========================
-          TITLE
-      ========================= */}
+        {/* TITLE */}
 
-      <div className="mb-6">
-
-        <h1 className="text-2xl font-bold text-gray-800">
-          My Orders
-        </h1>
-
-        <p className="text-gray-500 mt-1">
-          Table {customerTableNumber} • View and track your recent orders.
-        </p>
-
-      </div>
-
-      {/* =========================
-          ORDERS
-      ========================= */}
-
-      <div className="space-y-5">
-
-        {orders.map((order) => (
-
-          <div
-            key={order.id}
-            className="bg-white rounded-xl shadow-sm border p-5"
-          >
-
-            {/* =========================
-                TOP
-            ========================= */}
-
-            <div className="flex justify-between items-start gap-4">
-
-              <div>
-
-                <h2 className="font-bold text-lg text-gray-800">
-                  {order.orderNumber}
-                </h2>
-
-                <p className="text-gray-400 text-xs mt-1">
-                  Order ID: #{order.id}
-                </p>
-
-              </div>
-
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusStyle(
-                  order.status
-                )}`}
-              >
-                {getStatusText(order.status)}
-              </span>
-
-            </div>
-
-            {/* =========================
-                ITEMS
-            ========================= */}
-
-            <div className="mt-4 space-y-1">
-
-              {order.orderItems.map((item) => (
-
-                <div
-                  key={item.id}
-                  className="flex justify-between text-sm text-gray-600"
-                >
-
-                  <span>
-                    {item.menuItem?.name} ×{" "}
-                    {item.quantity}
-                  </span>
-
-                  <span>
-                    ৳
-                    {Number(
-                      item.subtotal
-                    ).toFixed(2)}
-                  </span>
-
-                </div>
-
-              ))}
-
-            </div>
-
-            {/* =========================
-                BOTTOM
-            ========================= */}
-
-            <div className="flex justify-between items-center mt-5 pt-4 border-t">
-
-              <div>
-
-                <p className="text-sm text-gray-500">
-                  Total
-                </p>
-
-                <p className="font-bold text-lg text-orange-500">
-                  ৳
-                  {Number(
-                    order.totalAmount
-                  ).toFixed(2)}
-                </p>
-
-              </div>
-
-              {/* TRACK */}
-
-              <Link
-                to={`/customer/tracking/${order.id}`}
-                className="bg-orange-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600 transition"
-              >
-                Track Order
-              </Link>
-
-            </div>
-
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-sm">
+            <ClipboardList size={20} />
           </div>
 
-        ))}
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-slate-800">
+              My Orders
+            </h1>
+
+            <p className="text-[11px] text-slate-500">
+              Table {customerTableNumber} • Recent orders
+            </p>
+          </div>
+        </div>
+
+        {/* ORDERS */}
+
+        <div className="space-y-3">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="overflow-hidden rounded-2xl bg-white shadow-sm"
+            >
+
+              {/* TOP */}
+
+              <div className="border-b border-slate-100 p-4">
+                <div className="flex items-start justify-between gap-3">
+
+                  <div className="min-w-0">
+                    <h2 className="truncate text-base font-bold text-slate-800">
+                      {order.orderNumber}
+                    </h2>
+
+                    <p className="mt-0.5 text-[10px] text-slate-400">
+                      Order ID: #{order.id}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[10px] font-bold ${getStatusStyle(
+                      order.status
+                    )}`}
+                  >
+                    {getStatusIcon(order.status)}
+                    {getStatusText(order.status)}
+                  </span>
+                </div>
+              </div>
+
+              {/* ITEMS */}
+
+              <div className="px-4 py-3">
+                <div className="space-y-2">
+                  {order.orderItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <span className="font-medium text-slate-600">
+                          {item.menuItem?.name}
+                        </span>
+
+                        <span className="ml-1.5 text-slate-400">
+                          × {item.quantity}
+                        </span>
+                      </div>
+
+                      <span className="shrink-0 font-semibold text-slate-600">
+                        ৳
+                        {Number(
+                          item.subtotal
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* BOTTOM */}
+
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/60 px-4 py-3">
+
+                <div>
+                  <p className="text-[10px] text-slate-400">
+                    Total
+                  </p>
+
+                  <p className="mt-0.5 text-base font-extrabold text-emerald-600">
+                    ৳
+                    {Number(
+                      order.totalAmount
+                    ).toFixed(2)}
+                  </p>
+                </div>
+
+                {/* TRACK ORDER */}
+
+                <Link
+                  to={`/customer/order-tracking/${order.id}`}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:shadow-md active:scale-[0.98]"
+                >
+                  Track Order
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
 
       </div>
-
     </div>
   );
 };
