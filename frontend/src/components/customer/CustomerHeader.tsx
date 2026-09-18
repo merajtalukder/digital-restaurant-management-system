@@ -16,10 +16,10 @@ const CustomerHeader = () => {
 
   const [searchParams] = useSearchParams();
 
-  const tableId = searchParams.get("tableId");
+  const tableId = searchParams.get("table");
 
   const cartQuery = tableId
-    ? `?tableId=${tableId}`
+    ? `?table=${tableId}`
     : "";
 
   return (
@@ -47,7 +47,6 @@ const CustomerHeader = () => {
           justify-between
         "
       >
-
         {/* =========================
             RESTAURANT INFO
         ========================= */}
@@ -165,7 +164,6 @@ const CustomerHeader = () => {
 
         </div>
 
-
         {/* =========================
             CART
         ========================= */}
@@ -235,7 +233,6 @@ const CustomerHeader = () => {
         </Link>
 
       </div>
-
     </header>
   );
 };

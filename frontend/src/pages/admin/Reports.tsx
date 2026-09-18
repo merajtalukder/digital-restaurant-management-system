@@ -10,11 +10,14 @@ import {
   QrCode,
   RefreshCw,
   CalendarDays,
+  Download,
+  FileText,
 } from "lucide-react";
 
 const API_URL = "http://localhost:3000";
 
 type ReportPeriod = "Today" | "This Week" | "This Month";
+
 type OrderType = "WAITER" | "QR";
 
 type OrderStatus =
@@ -79,10 +82,15 @@ interface Order {
 }
 
 const Reports = () => {
-  const [period, setPeriod] = useState<ReportPeriod>("Today");
+  const [period, setPeriod] =
+    useState<ReportPeriod>("Today");
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [reportGenerated, setReportGenerated] =
+    useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -96,9 +104,11 @@ const Reports = () => {
       }
 
       const data: Order[] = await response.json();
+
       setOrders(data);
     } catch (error) {
       console.error(error);
+
       setError(
         "Could not load report data. Please check your backend server."
       );
@@ -133,6 +143,7 @@ const Reports = () => {
         startOfWeek.setDate(
           startOfWeek.getDate() - difference
         );
+
         startOfWeek.setHours(0, 0, 0, 0);
 
         return orderDate >= startOfWeek;
@@ -149,6 +160,15 @@ const Reports = () => {
     });
   }, [orders, period]);
 
+  /*
+   * Sales are calculated from PAID payments.
+   * This makes the report update after the Cashier marks
+   * a payment as PAID.
+   */
+  const paidOrders = filteredOrders.filter(
+    (order) => order.payment?.status === "PAID"
+  );
+
   const completedOrders = filteredOrders.filter(
     (order) => order.status === "COMPLETED"
   );
@@ -157,33 +177,38 @@ const Reports = () => {
     (order) => order.status === "CANCELLED"
   );
 
-  const totalSales = completedOrders.reduce(
-    (sum, order) => sum + Number(order.totalAmount),
+  const totalSales = paidOrders.reduce(
+    (sum, order) =>
+      sum + Number(
+        order.payment?.amount ?? order.totalAmount
+      ),
     0
   );
 
   const totalOrders = filteredOrders.length;
 
   const averageOrder =
-    completedOrders.length > 0
-      ? totalSales / completedOrders.length
+    paidOrders.length > 0
+      ? totalSales / paidOrders.length
       : 0;
 
-  const paidOrders = filteredOrders.filter(
-    (order) => order.payment?.status === "PAID"
-  );
-
-  const waiterSales = completedOrders
+  const waiterSales = paidOrders
     .filter((order) => order.orderType === "WAITER")
     .reduce(
-      (sum, order) => sum + Number(order.totalAmount),
+      (sum, order) =>
+        sum + Number(
+          order.payment?.amount ?? order.totalAmount
+        ),
       0
     );
 
-  const qrSales = completedOrders
+  const qrSales = paidOrders
     .filter((order) => order.orderType === "QR")
     .reduce(
-      (sum, order) => sum + Number(order.totalAmount),
+      (sum, order) =>
+        sum + Number(
+          order.payment?.amount ?? order.totalAmount
+        ),
       0
     );
 
@@ -263,14 +288,211 @@ const Reports = () => {
     },
   };
 
-  const getPaymentStatus = (order: Order): PaymentStatus =>
+  const getPaymentStatus = (
+    order: Order
+  ): PaymentStatus =>
     order.payment?.status ?? "PENDING";
+
+  const generateReport = async () => {
+    try {
+      setGenerating(true);
+      setReportGenerated(false);
+
+      await fetchOrders();
+
+      setReportGenerated(true);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (filteredOrders.length === 0) {
+      alert("There is no report data to download.");
+      return;
+    }
+
+    const reportDate = new Date().toLocaleString();
+
+    const rows: string[][] = [];
+
+    rows.push([
+      "Restaurant Sales Report",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Period",
+      period,
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Generated At",
+      reportDate,
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Total Sales",
+      formatMoney(totalSales),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Total Orders",
+      String(totalOrders),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Completed Orders",
+      String(completedOrders.length),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Cancelled Orders",
+      String(cancelledOrders.length),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Paid Orders",
+      String(paidOrders.length),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Average Order",
+      formatMoney(averageOrder),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Waiter Sales",
+      formatMoney(waiterSales),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "QR Sales",
+      formatMoney(qrSales),
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
+
+    rows.push([
+      "Order",
+      "Table",
+      "Type",
+      "Total",
+      "Status",
+      "Payment",
+    ]);
+
+    filteredOrders.forEach((order) => {
+      rows.push([
+        order.orderNumber,
+        getTableNumber(order.table),
+        order.orderType === "QR"
+          ? "QR Self Order"
+          : "Waiter Order",
+        formatMoney(Number(order.totalAmount)),
+        statusConfig[order.status].label,
+        paymentConfig[getPaymentStatus(order)].label,
+      ]);
+    });
+
+    const csvContent = rows
+      .map((row) =>
+        row
+          .map((value) => {
+            const safeValue = String(value)
+              .replace(/"/g, '""');
+
+            return `"${safeValue}"`;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      ["\uFEFF" + csvContent],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    const date = new Date()
+      .toISOString()
+      .slice(0, 10);
+
+    link.href = url;
+    link.download =
+      `restaurant-${period
+        .toLowerCase()
+        .replace(/\s+/g, "-")}-report-${date}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
 
   const summaryCards = [
     {
       label: "Total Sales",
       value: formatMoney(totalSales),
-      note: "From completed orders",
+      note: "From paid orders",
       icon: <Wallet size={18} />,
       box: "bg-emerald-50 text-emerald-600",
     },
@@ -284,7 +506,7 @@ const Reports = () => {
     {
       label: "Average Order",
       value: formatMoney(averageOrder),
-      note: "Per completed order",
+      note: "Per paid order",
       icon: <BarChart3 size={18} />,
       box: "bg-violet-50 text-violet-600",
     },
@@ -310,13 +532,47 @@ const Reports = () => {
             <h2 className="text-xl font-bold tracking-tight text-slate-900">
               Reports
             </h2>
+
             <p className="text-xs text-slate-500">
               Restaurant sales and order performance
             </p>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={generateReport}
+            disabled={loading || generating}
+            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-600 disabled:opacity-50"
+          >
+            <FileText
+              size={14}
+              className={
+                generating
+                  ? "animate-pulse"
+                  : ""
+              }
+            />
+
+            {generating
+              ? "Generating..."
+              : "Generate Report"}
+          </button>
+
+          <button
+            type="button"
+            onClick={downloadReport}
+            disabled={
+              loading ||
+              filteredOrders.length === 0
+            }
+            className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download size={14} />
+            Download Report
+          </button>
+
           <button
             type="button"
             onClick={fetchOrders}
@@ -325,8 +581,13 @@ const Reports = () => {
           >
             <RefreshCw
               size={14}
-              className={loading ? "animate-spin" : ""}
+              className={
+                loading
+                  ? "animate-spin"
+                  : ""
+              }
             />
+
             Refresh
           </button>
 
@@ -338,20 +599,37 @@ const Reports = () => {
 
             <select
               value={period}
-              onChange={(e) =>
+              onChange={(e) => {
                 setPeriod(
                   e.target.value as ReportPeriod
-                )
-              }
+                );
+                setReportGenerated(false);
+              }}
               className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-bold text-slate-700 shadow-sm outline-none focus:border-emerald-400"
             >
-              <option value="Today">Today</option>
-              <option value="This Week">This Week</option>
-              <option value="This Month">This Month</option>
+              <option value="Today">
+                Today
+              </option>
+
+              <option value="This Week">
+                This Week
+              </option>
+
+              <option value="This Month">
+                This Month
+              </option>
             </select>
           </div>
         </div>
       </div>
+
+      {/* Report Generated Message */}
+      {reportGenerated && (
+        <div className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+          <CheckCircle2 size={15} />
+          Report generated successfully for {period}.
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -373,6 +651,7 @@ const Reports = () => {
             size={28}
             className="mx-auto mb-3 animate-spin text-emerald-500"
           />
+
           <p className="text-xs font-medium text-slate-500">
             Loading reports...
           </p>
@@ -417,6 +696,7 @@ const Reports = () => {
                   size={16}
                   className="text-emerald-500"
                 />
+
                 <p className="text-xs font-bold text-slate-700">
                   Completed Orders
                 </p>
@@ -433,6 +713,7 @@ const Reports = () => {
                   size={16}
                   className="text-red-500"
                 />
+
                 <p className="text-xs font-bold text-slate-700">
                   Cancelled Orders
                 </p>
@@ -449,6 +730,7 @@ const Reports = () => {
                   size={16}
                   className="text-violet-500"
                 />
+
                 <p className="text-xs font-bold text-slate-700">
                   Selected Period
                 </p>
@@ -472,6 +754,7 @@ const Reports = () => {
                   <h3 className="text-sm font-bold text-slate-900">
                     Waiter Orders
                   </h3>
+
                   <p className="text-[11px] text-slate-400">
                     Sales from waiter-based orders
                   </p>
@@ -489,7 +772,9 @@ const Reports = () => {
                     width:
                       totalSales > 0
                         ? `${Math.min(
-                            (waiterSales / totalSales) * 100,
+                            (waiterSales /
+                              totalSales) *
+                              100,
                             100
                           )}%`
                         : "0%",
@@ -508,6 +793,7 @@ const Reports = () => {
                   <h3 className="text-sm font-bold text-slate-900">
                     QR Self Orders
                   </h3>
+
                   <p className="text-[11px] text-slate-400">
                     Sales from QR customer orders
                   </p>
@@ -525,7 +811,9 @@ const Reports = () => {
                     width:
                       totalSales > 0
                         ? `${Math.min(
-                            (qrSales / totalSales) * 100,
+                            (qrSales /
+                              totalSales) *
+                              100,
                             100
                           )}%`
                         : "0%",
@@ -583,10 +871,14 @@ const Reports = () => {
                         getPaymentStatus(order);
 
                       const status =
-                        statusConfig[order.status];
+                        statusConfig[
+                          order.status
+                        ];
 
                       const payment =
-                        paymentConfig[paymentStatus];
+                        paymentConfig[
+                          paymentStatus
+                        ];
 
                       return (
                         <tr
@@ -597,26 +889,33 @@ const Reports = () => {
                             <p className="text-xs font-bold text-slate-800">
                               {order.orderNumber}
                             </p>
+
                             <p className="mt-0.5 text-[10px] text-slate-400">
-                              {formatDate(order.createdAt)}
+                              {formatDate(
+                                order.createdAt
+                              )}
                             </p>
                           </td>
 
                           <td className="px-5 py-3.5">
                             <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-                              {getTableNumber(order.table)}
+                              {getTableNumber(
+                                order.table
+                              )}
                             </span>
                           </td>
 
                           <td className="px-5 py-3.5">
                             <span
                               className={`rounded-lg px-2 py-1 text-[10px] font-bold ${
-                                order.orderType === "QR"
+                                order.orderType ===
+                                "QR"
                                   ? "bg-violet-50 text-violet-700"
                                   : "bg-cyan-50 text-cyan-700"
                               }`}
                             >
-                              {order.orderType === "QR"
+                              {order.orderType ===
+                              "QR"
                                 ? "QR Self Order"
                                 : "Waiter Order"}
                             </span>
@@ -625,7 +924,9 @@ const Reports = () => {
                           <td className="px-5 py-3.5">
                             <span className="text-xs font-bold text-slate-800">
                               {formatMoney(
-                                Number(order.totalAmount)
+                                Number(
+                                  order.totalAmount
+                                )
                               )}
                             </span>
                           </td>
@@ -655,7 +956,9 @@ const Reports = () => {
                         className="px-5 py-14 text-center"
                       >
                         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-slate-50 text-slate-400">
-                          <ShoppingBag size={20} />
+                          <ShoppingBag
+                            size={20}
+                          />
                         </div>
 
                         <p className="mt-3 text-xs font-semibold text-slate-500">

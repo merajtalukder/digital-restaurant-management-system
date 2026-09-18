@@ -1,8 +1,4 @@
-import {
-  Link,
-  useLocation,
-  useSearchParams,
-} from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
   Home,
@@ -14,10 +10,10 @@ const BottomNavigation = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
 
-  const tableId = searchParams.get("tableId");
+  const tableId = searchParams.get("table");
 
   const tableQuery = tableId
-    ? `?tableId=${tableId}`
+    ? `?table=${tableId}`
     : "";
 
   const isMenuActive =
@@ -55,7 +51,6 @@ const BottomNavigation = () => {
           py-1
         "
       >
-
         {/* MENU */}
         <Link
           to={`/customer/menu${tableQuery}`}
@@ -175,7 +170,6 @@ const BottomNavigation = () => {
             Profile
           </span>
         </Link>
-
       </div>
     </nav>
   );

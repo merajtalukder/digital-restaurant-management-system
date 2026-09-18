@@ -83,6 +83,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("user")
 }
 
 
@@ -100,6 +102,8 @@ model Category {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("category")
 }
 
 
@@ -111,7 +115,7 @@ model MenuItem {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
-  price       Decimal  @db.Decimal(10, 2)
+  price       Decimal  @db.Decimal(10,2)
   image       String?
   foodType    FoodType
   isAvailable Boolean  @default(true)
@@ -123,6 +127,8 @@ model MenuItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("menuitem")
 }
 
 
@@ -140,6 +146,8 @@ model RestaurantTable {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("restauranttable")
 }
 
 
@@ -158,37 +166,26 @@ model Order {
 
   status OrderStatus @default(PENDING)
 
-  totalAmount Decimal @db.Decimal(10, 2)
+  totalAmount Decimal @db.Decimal(10,2)
 
-  // =========================
-  // TABLE
-  // =========================
 
   tableId Int
   table RestaurantTable @relation(fields: [tableId], references: [id])
 
-  // =========================
-  // WAITER
-  // OPTIONAL FOR QR ORDERS
-  // =========================
 
   waiterId Int?
   waiter User? @relation(fields: [waiterId], references: [id])
 
-  // =========================
-  // ORDER ITEMS
-  // =========================
 
   orderItems OrderItem[]
 
-  // =========================
-  // PAYMENT
-  // =========================
-
   payment Payment?
+
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("order")
 }
 
 
@@ -201,21 +198,23 @@ model OrderItem {
 
   quantity Int
 
-  unitPrice Decimal @db.Decimal(10, 2)
+  unitPrice Decimal @db.Decimal(10,2)
 
-  subtotal Decimal @db.Decimal(10, 2)
+  subtotal Decimal @db.Decimal(10,2)
 
-  // =========================
-  // SPECIAL INSTRUCTIONS
-  // =========================
 
   specialInstructions String? @db.Text
+
 
   orderId Int
   order Order @relation(fields: [orderId], references: [id])
 
+
   menuItemId Int
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+
+  @@map("orderitem")
 }
 
 
@@ -230,12 +229,16 @@ model Payment {
 
   status PaymentStatus @default(PENDING)
 
-  amount Decimal @db.Decimal(10, 2)
+  amount Decimal @db.Decimal(10,2)
 
   transactionId String?
+
 
   orderId Int @unique
   order Order @relation(fields: [orderId], references: [id])
 
+
   createdAt DateTime @default(now())
+
+  @@map("payment")
 }
