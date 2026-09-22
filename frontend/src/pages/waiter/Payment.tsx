@@ -8,11 +8,18 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 
 import api from "../../api/axios";
 
-type PaymentMethod = "BKASH" | "NAGAD" | "CARD" | "CASH";
+type PaymentMethod =
+  | "BKASH"
+  | "NAGAD"
+  | "ROCKET"
+  | "CARD"
+  | "CASH";
 
 interface Payment {
   id: number;
@@ -47,6 +54,15 @@ interface Order {
   orderItems?: OrderItem[];
 }
 
+interface InitiatePaymentResponse {
+  success: boolean;
+  paymentId: number;
+  orderId: number;
+  transactionId: string;
+  gatewayPageURL: string;
+  sessionKey?: string | null;
+}
+
 const Payment = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
@@ -55,9 +71,6 @@ const Payment = () => {
 
   const [method, setMethod] =
     useState<PaymentMethod>("CASH");
-
-  const [transactionId, setTransactionId] =
-    useState("");
 
   const [loading, setLoading] =
     useState(true);
@@ -71,6 +84,7 @@ const Payment = () => {
   // =========================
   // LOAD ORDER
   // =========================
+
   useEffect(() => {
     const loadOrder = async () => {
       try {
@@ -92,13 +106,11 @@ const Payment = () => {
           return;
         }
 
-        const response =
-          await api.get(
-            `/orders/${numericOrderId}`,
-          );
+        const response = await api.get<Order>(
+          `/orders/${numericOrderId}`,
+        );
 
-        const fetchedOrder: Order =
-          response.data;
+        const fetchedOrder = response.data;
 
         if (!fetchedOrder) {
           setError("Order not found.");
@@ -107,18 +119,13 @@ const Payment = () => {
 
         setOrder(fetchedOrder);
 
-        // Already PAID
-        // Waiter does not see success page.
         if (
           fetchedOrder.payment?.status ===
           "PAID"
         ) {
-          navigate(
-            "/waiter/orders",
-            {
-              replace: true,
-            },
-          );
+          navigate("/waiter/orders", {
+            replace: true,
+          });
         }
       } catch (err: any) {
         console.error(
@@ -139,17 +146,103 @@ const Payment = () => {
   }, [orderId, navigate]);
 
   // =========================
-  // CREATE PAYMENT
+  // CREATE CASH PAYMENT
   // =========================
+
+  const createCashPayment = async () => {
+    if (!order) {
+      setError("Order not found.");
+      return;
+    }
+
+    const response = await api.post<Payment>(
+      "/payments",
+      {
+        orderId: order.id,
+        amount: Number(
+          order.totalAmount || 0,
+        ),
+        method: "CASH",
+      },
+    );
+
+    if (!response.data) {
+      throw new Error(
+        "Payment could not be created.",
+      );
+    }
+
+    navigate("/waiter/orders", {
+      replace: true,
+      state: {
+        paymentSubmitted: true,
+        paymentMethod: "CASH",
+        orderId: order.id,
+      },
+    });
+  };
+
+  // =========================
+  // CREATE ONLINE PAYMENT
+  // =========================
+
+  const createOnlinePayment = async () => {
+    if (!order) {
+      setError("Order not found.");
+      return;
+    }
+
+    const createResponse =
+      await api.post<Payment>(
+        "/payments",
+        {
+          orderId: order.id,
+          amount: Number(
+            order.totalAmount || 0,
+          ),
+          method,
+        },
+      );
+
+    const payment = createResponse.data;
+
+    if (!payment?.id) {
+      throw new Error(
+        "Payment could not be created.",
+      );
+    }
+
+    const initiateResponse =
+      await api.post<InitiatePaymentResponse>(
+        `/payments/${payment.id}/initiate`,
+      );
+
+    const data = initiateResponse.data;
+
+    if (
+      !data?.success ||
+      !data?.gatewayPageURL
+    ) {
+      throw new Error(
+        "Payment gateway URL was not received.",
+      );
+    }
+
+    window.location.href =
+      data.gatewayPageURL;
+  };
+
+  // =========================
+  // SUBMIT PAYMENT
+  // =========================
+
   const handleSubmitPayment =
     async () => {
       try {
         setError("");
 
         if (!order) {
-          setError(
-            "Order not found.",
-          );
+          setError("Order not found.");
           return;
         }
 
@@ -157,90 +250,77 @@ const Payment = () => {
           order.payment?.status ===
           "PAID"
         ) {
-          navigate(
-            "/waiter/orders",
-            {
-              replace: true,
-            },
-          );
-          return;
-        }
+          navigate("/waiter/orders", {
+            replace: true,
+          });
 
-        // bKash / Nagad transaction ID
-        if (
-          (method === "BKASH" ||
-            method === "NAGAD") &&
-          !transactionId.trim()
-        ) {
-          setError(
-            `Please enter ${method} transaction ID.`,
-          );
-          return;
-        }
-
-        // Card transaction ID
-        if (
-          method === "CARD" &&
-          !transactionId.trim()
-        ) {
-          setError(
-            "Please enter card transaction ID.",
-          );
           return;
         }
 
         setSubmitting(true);
 
-        // =====================================
-        // IMPORTANT
-        // Payment is created ONLY when Pay is clicked.
-        // Status will always be PENDING.
-        // Cashier will later confirm it.
-        // =====================================
-        await api.post(
-          "/payments",
-          {
-            orderId: order.id,
-            amount: Number(
-              order.totalAmount || 0,
-            ),
-            method,
-            transactionId:
-              transactionId.trim() ||
-              undefined,
-          },
-        );
-
-        // Waiter does NOT see payment success.
-        // Simply go back to orders.
-        navigate(
-          "/waiter/orders",
-          {
-            replace: true,
-            state: {
-              paymentSubmitted: true,
-              orderId: order.id,
-            },
-          },
-        );
+        if (method === "CASH") {
+          await createCashPayment();
+        } else {
+          await createOnlinePayment();
+        }
       } catch (err: any) {
         console.error(
-          "Payment creation error:",
+          "Payment submission error:",
           err,
         );
 
         setError(
           err?.response?.data?.message ||
-            "Failed to submit payment.",
+            err?.message ||
+            "Failed to process payment.",
         );
-      } finally {
+
         setSubmitting(false);
       }
     };
 
   // =========================
+  // PAYMENT METHOD ICON
+  // =========================
+
+  const getMethodIcon = (
+    paymentMethod: PaymentMethod,
+    selected: boolean,
+  ) => {
+    const className = `w-7 h-7 mx-auto mb-2 ${
+      selected
+        ? "text-orange-500"
+        : "text-gray-500"
+    }`;
+
+    if (paymentMethod === "CASH") {
+      return (
+        <Banknote
+          className={className}
+        />
+      );
+    }
+
+    if (paymentMethod === "CARD") {
+      return (
+        <CreditCard
+          className={className}
+        />
+      );
+    }
+
+    return (
+      <Smartphone
+        className={className}
+      />
+    );
+  };
+
+  // =========================
   // LOADING
   // =========================
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -258,6 +338,7 @@ const Payment = () => {
   // =========================
   // ERROR
   // =========================
+
   if (error && !order) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -293,10 +374,9 @@ const Payment = () => {
     return null;
   }
 
-  const totalAmount =
-    Number(
-      order.totalAmount || 0,
-    );
+  const totalAmount = Number(
+    order.totalAmount || 0,
+  );
 
   const isPending =
     order.payment?.status ===
@@ -308,6 +388,7 @@ const Payment = () => {
       {/* =========================
           HEADER
       ========================= */}
+
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
 
@@ -316,6 +397,7 @@ const Payment = () => {
               navigate(-1)
             }
             className="p-2 rounded-full hover:bg-gray-100"
+            disabled={submitting}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -331,6 +413,7 @@ const Payment = () => {
                 order.id}
             </p>
           </div>
+
         </div>
       </div>
 
@@ -339,6 +422,7 @@ const Payment = () => {
         {/* =========================
             ORDER SUMMARY
         ========================= */}
+
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
 
           <div className="flex justify-between items-start mb-4">
@@ -377,6 +461,7 @@ const Payment = () => {
                 }
               </span>
             )}
+
           </div>
 
           <div className="space-y-3">
@@ -411,6 +496,7 @@ const Payment = () => {
                 </div>
               ),
             )}
+
           </div>
 
           <div className="border-t mt-4 pt-4 flex justify-between">
@@ -425,12 +511,14 @@ const Payment = () => {
                 2,
               )}
             </span>
+
           </div>
         </div>
 
         {/* =========================
             EXISTING PENDING PAYMENT
         ========================= */}
+
         {isPending && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-5">
 
@@ -444,9 +532,7 @@ const Payment = () => {
                 </p>
 
                 <p className="text-sm text-yellow-700 mt-1">
-                  This payment has already
-                  been sent to the Cashier
-                  for confirmation.
+                  This payment is already waiting for confirmation.
                 </p>
               </div>
 
@@ -457,6 +543,7 @@ const Payment = () => {
         {/* =========================
             ERROR
         ========================= */}
+
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
 
@@ -469,12 +556,14 @@ const Payment = () => {
               </p>
 
             </div>
+
           </div>
         )}
 
         {/* =========================
             PAYMENT METHOD
         ========================= */}
+
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
 
           <h2 className="font-bold text-gray-900 mb-4">
@@ -484,26 +573,27 @@ const Payment = () => {
           <div className="grid grid-cols-2 gap-3">
 
             {/* CASH */}
+
             <button
               type="button"
               onClick={() => {
                 setMethod("CASH");
-                setTransactionId("");
                 setError("");
               }}
+              disabled={
+                submitting ||
+                isPending
+              }
               className={`p-4 rounded-xl border-2 transition ${
                 method === "CASH"
                   ? "border-orange-500 bg-orange-50"
                   : "border-gray-200 bg-white"
-              }`}
+              } disabled:opacity-50`}
             >
-              <Banknote
-                className={`w-7 h-7 mx-auto mb-2 ${
-                  method === "CASH"
-                    ? "text-orange-500"
-                    : "text-gray-500"
-                }`}
-              />
+              {getMethodIcon(
+                "CASH",
+                method === "CASH",
+              )}
 
               <p className="font-semibold text-sm">
                 Cash
@@ -511,26 +601,27 @@ const Payment = () => {
             </button>
 
             {/* CARD */}
+
             <button
               type="button"
               onClick={() => {
                 setMethod("CARD");
-                setTransactionId("");
                 setError("");
               }}
+              disabled={
+                submitting ||
+                isPending
+              }
               className={`p-4 rounded-xl border-2 transition ${
                 method === "CARD"
                   ? "border-orange-500 bg-orange-50"
                   : "border-gray-200 bg-white"
-              }`}
+              } disabled:opacity-50`}
             >
-              <CreditCard
-                className={`w-7 h-7 mx-auto mb-2 ${
-                  method === "CARD"
-                    ? "text-orange-500"
-                    : "text-gray-500"
-                }`}
-              />
+              {getMethodIcon(
+                "CARD",
+                method === "CARD",
+              )}
 
               <p className="font-semibold text-sm">
                 Card
@@ -538,26 +629,27 @@ const Payment = () => {
             </button>
 
             {/* BKASH */}
+
             <button
               type="button"
               onClick={() => {
                 setMethod("BKASH");
-                setTransactionId("");
                 setError("");
               }}
+              disabled={
+                submitting ||
+                isPending
+              }
               className={`p-4 rounded-xl border-2 transition ${
                 method === "BKASH"
                   ? "border-orange-500 bg-orange-50"
                   : "border-gray-200 bg-white"
-              }`}
+              } disabled:opacity-50`}
             >
-              <Smartphone
-                className={`w-7 h-7 mx-auto mb-2 ${
-                  method === "BKASH"
-                    ? "text-orange-500"
-                    : "text-gray-500"
-                }`}
-              />
+              {getMethodIcon(
+                "BKASH",
+                method === "BKASH",
+              )}
 
               <p className="font-semibold text-sm">
                 bKash
@@ -565,29 +657,58 @@ const Payment = () => {
             </button>
 
             {/* NAGAD */}
+
             <button
               type="button"
               onClick={() => {
                 setMethod("NAGAD");
-                setTransactionId("");
                 setError("");
               }}
+              disabled={
+                submitting ||
+                isPending
+              }
               className={`p-4 rounded-xl border-2 transition ${
                 method === "NAGAD"
                   ? "border-orange-500 bg-orange-50"
                   : "border-gray-200 bg-white"
-              }`}
+              } disabled:opacity-50`}
             >
-              <Smartphone
-                className={`w-7 h-7 mx-auto mb-2 ${
-                  method === "NAGAD"
-                    ? "text-orange-500"
-                    : "text-gray-500"
-                }`}
-              />
+              {getMethodIcon(
+                "NAGAD",
+                method === "NAGAD",
+              )}
 
               <p className="font-semibold text-sm">
                 Nagad
+              </p>
+            </button>
+
+            {/* ROCKET */}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMethod("ROCKET");
+                setError("");
+              }}
+              disabled={
+                submitting ||
+                isPending
+              }
+              className={`p-4 rounded-xl border-2 transition ${
+                method === "ROCKET"
+                  ? "border-orange-500 bg-orange-50"
+                  : "border-gray-200 bg-white"
+              } disabled:opacity-50`}
+            >
+              {getMethodIcon(
+                "ROCKET",
+                method === "ROCKET",
+              )}
+
+              <p className="font-semibold text-sm">
+                Rocket
               </p>
             </button>
 
@@ -595,34 +716,31 @@ const Payment = () => {
         </div>
 
         {/* =========================
-            TRANSACTION ID
+            ONLINE PAYMENT NOTICE
         ========================= */}
+
         {method !== "CASH" && (
-          <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5">
 
-            <label className="block font-semibold text-gray-800 mb-2">
-              {method ===
-              "BKASH"
-                ? "bKash Transaction ID"
-                : method ===
-                    "NAGAD"
-                  ? "Nagad Transaction ID"
-                  : "Card Transaction ID"}
-            </label>
+            <div className="flex gap-3">
 
-            <input
-              type="text"
-              value={
-                transactionId
-              }
-              onChange={(e) =>
-                setTransactionId(
-                  e.target.value,
-                )
-              }
-              placeholder="Enter transaction ID"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-orange-500"
-            />
+              <ExternalLink className="w-5 h-5 text-blue-600 mt-0.5" />
+
+              <div>
+                <p className="font-semibold text-blue-800">
+                  Online Payment
+                </p>
+
+                <p className="text-sm text-blue-700 mt-1">
+                  The customer will be redirected to the secure SSLCommerz payment page to complete the payment.
+                </p>
+
+                <p className="text-xs text-blue-600 mt-2">
+                  No manual transaction ID is required.
+                </p>
+              </div>
+
+            </div>
 
           </div>
         )}
@@ -630,6 +748,7 @@ const Payment = () => {
         {/* =========================
             CASH INFORMATION
         ========================= */}
+
         {method === "CASH" && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5">
 
@@ -638,10 +757,7 @@ const Payment = () => {
             </p>
 
             <p className="text-sm text-blue-700 mt-1">
-              Send this payment request
-              to the Cashier. The Cashier
-              will verify and confirm the
-              payment.
+              Waiter receives the cash from the customer. The Cashier will verify and confirm the payment before marking it as PAID.
             </p>
 
           </div>
@@ -650,6 +766,7 @@ const Payment = () => {
         {/* =========================
             SUBMIT BUTTON
         ========================= */}
+
         <button
           type="button"
           onClick={
@@ -665,18 +782,29 @@ const Payment = () => {
         >
           {submitting ? (
             <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Sending...
+              <RefreshCw className="w-5 h-5 animate-spin" />
+
+              {method === "CASH"
+                ? "Sending..."
+                : "Opening Payment Gateway..."}
             </>
           ) : isPending ? (
             <>
               <CheckCircle2 className="w-5 h-5" />
+
               Payment Pending
+            </>
+          ) : method === "CASH" ? (
+            <>
+              <Banknote className="w-5 h-5" />
+
+              Send to Cashier
             </>
           ) : (
             <>
-              <CheckCircle2 className="w-5 h-5" />
-              Pay ৳
+              <ExternalLink className="w-5 h-5" />
+
+              Pay Online ৳
               {totalAmount.toFixed(
                 2,
               )}
@@ -685,8 +813,9 @@ const Payment = () => {
         </button>
 
         <p className="text-center text-xs text-gray-500 mt-3">
-          Payment will be confirmed by
-          Cashier.
+          {method === "CASH"
+            ? "Cash payment will be confirmed by the Cashier."
+            : "Online payment will be confirmed automatically after successful payment."}
         </p>
 
       </div>

@@ -244,7 +244,7 @@ const Welcome = () => {
       <div className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[28px] bg-white shadow-sm">
         <div className="shrink-0 px-5 pt-4 sm:px-6 sm:pt-5">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 sm:text-xs">
-            Restaurant
+            Digital Restaurant
           </p>
 
           <h1 className="mt-0.5 text-lg font-bold text-slate-900 sm:text-xl">

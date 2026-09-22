@@ -28,11 +28,7 @@ const WaiterSidebar = () => {
       path: "/waiter/orders",
       icon: ClipboardList,
     },
-    {
-      name: "Profile",
-      path: "/waiter/profile",
-      icon: UserRound,
-    },
+    
   ];
 
   const handleLogout = () => {

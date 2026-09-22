@@ -1901,7 +1901,7 @@ const Menu = () => {
                         event.target.value,
                     }))
                   }
-                  placeholder="Example: make it a little hotter, less oil, extra sauce..."
+                  placeholder="Example: Extra Spicy • Extra Tangy • Less Oil • Mild • Extra Crispy • No Onion • No Garlic"
                   maxLength={300}
                   rows={3}
                   className="

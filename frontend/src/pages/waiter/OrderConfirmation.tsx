@@ -66,10 +66,7 @@ const OrderConfirmation = () => {
     [initialCart],
   );
 
-  const vat = subtotal * 0.05;
-
-  const total =
-    subtotal + vat;
+  const total = subtotal;
 
   // =========================
   // GO BACK
@@ -155,14 +152,6 @@ const OrderConfirmation = () => {
 
   // =========================
   // CREATE ORDER
-  // =========================
-  //
-  // IMPORTANT:
-  // Payment is NOT created here.
-  //
-  // Payment will be created only
-  // when waiter clicks Pay on
-  // the Payment page.
   // =========================
 
   const createOrder =
@@ -317,6 +306,7 @@ const OrderConfirmation = () => {
         //
         // Payment will NOT be created
         // until waiter clicks Pay there.
+
         navigate(
           `/waiter/payment/${orderId}`,
         );
@@ -415,6 +405,7 @@ const OrderConfirmation = () => {
     <div className="mx-auto max-w-4xl space-y-5 pb-8">
 
       {/* HEADER */}
+
       <div className="flex items-center gap-3">
 
         <button
@@ -441,6 +432,7 @@ const OrderConfirmation = () => {
       </div>
 
       {/* TABLE */}
+
       <div className="rounded-3xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-[1px] shadow-lg shadow-emerald-500/10">
 
         <div className="rounded-[23px] bg-white p-5">
@@ -472,6 +464,7 @@ const OrderConfirmation = () => {
       </div>
 
       {/* ITEMS */}
+
       <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
 
         <div className="mb-4 flex items-center justify-between">
@@ -512,6 +505,7 @@ const OrderConfirmation = () => {
               >
 
                 {/* IMAGE */}
+
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-cyan-50">
 
                   {item.image ? (
@@ -535,6 +529,7 @@ const OrderConfirmation = () => {
                 </div>
 
                 {/* INFO */}
+
                 <div className="min-w-0 flex-1">
 
                   <h3 className="truncate text-sm font-black text-slate-900">
@@ -551,6 +546,7 @@ const OrderConfirmation = () => {
                 </div>
 
                 {/* QUANTITY */}
+
                 <div className="flex items-center gap-2 rounded-xl bg-white p-1 shadow-sm">
 
                   <button
@@ -580,6 +576,7 @@ const OrderConfirmation = () => {
                 </div>
 
                 {/* ITEM TOTAL */}
+
                 <div className="hidden w-24 text-right sm:block">
 
                   <p className="text-sm font-black text-slate-900">
@@ -609,6 +606,7 @@ const OrderConfirmation = () => {
       </div>
 
       {/* INSTRUCTIONS */}
+
       {instructions.trim() && (
         <div className="rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
 
@@ -624,6 +622,7 @@ const OrderConfirmation = () => {
       )}
 
       {/* BILL */}
+
       <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
 
         <h2 className="mb-4 text-lg font-black text-slate-900">
@@ -641,21 +640,6 @@ const OrderConfirmation = () => {
             <span className="font-bold text-slate-800">
               ৳
               {subtotal.toFixed(
-                2,
-              )}
-            </span>
-
-          </div>
-
-          <div className="flex justify-between text-slate-500">
-
-            <span>
-              VAT (5%)
-            </span>
-
-            <span className="font-bold text-slate-800">
-              ৳
-              {vat.toFixed(
                 2,
               )}
             </span>
@@ -683,6 +667,7 @@ const OrderConfirmation = () => {
       </div>
 
       {/* PAYMENT INFO */}
+
       <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 p-5">
 
         <div className="flex items-start gap-3">
@@ -717,9 +702,11 @@ const OrderConfirmation = () => {
       </div>
 
       {/* ACTIONS */}
+
       <div className="grid gap-3 sm:grid-cols-3">
 
         {/* EDIT */}
+
         <button
           onClick={goBack}
           disabled={loading}
@@ -733,6 +720,7 @@ const OrderConfirmation = () => {
         </button>
 
         {/* PAY LATER */}
+
         <button
           onClick={
             handlePayLater
@@ -755,6 +743,7 @@ const OrderConfirmation = () => {
         </button>
 
         {/* TAKE PAYMENT */}
+
         <button
           onClick={
             handlePayNow

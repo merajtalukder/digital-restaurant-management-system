@@ -5,7 +5,6 @@ import {
   Wallet,
   CreditCard,
   CheckCircle2,
-  XCircle,
   Users,
   QrCode,
   RefreshCw,
@@ -179,7 +178,8 @@ const Reports = () => {
 
   const totalSales = paidOrders.reduce(
     (sum, order) =>
-      sum + Number(
+      sum +
+      Number(
         order.payment?.amount ?? order.totalAmount
       ),
     0
@@ -196,7 +196,8 @@ const Reports = () => {
     .filter((order) => order.orderType === "WAITER")
     .reduce(
       (sum, order) =>
-        sum + Number(
+        sum +
+        Number(
           order.payment?.amount ?? order.totalAmount
         ),
       0
@@ -206,7 +207,8 @@ const Reports = () => {
     .filter((order) => order.orderType === "QR")
     .reduce(
       (sum, order) =>
-        sum + Number(
+        sum +
+        Number(
           order.payment?.amount ?? order.totalAmount
         ),
       0
@@ -450,8 +452,10 @@ const Reports = () => {
       .map((row) =>
         row
           .map((value) => {
-            const safeValue = String(value)
-              .replace(/"/g, '""');
+            const safeValue = String(value).replace(
+              /"/g,
+              '""'
+            );
 
             return `"${safeValue}"`;
           })
@@ -689,7 +693,7 @@ const Reports = () => {
           </div>
 
           {/* Secondary Stats */}
-          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-4">
               <div className="flex items-center gap-2">
                 <CheckCircle2
@@ -704,23 +708,6 @@ const Reports = () => {
 
               <p className="mt-2 text-2xl font-bold text-emerald-600">
                 {completedOrders.length}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 to-white p-4">
-              <div className="flex items-center gap-2">
-                <XCircle
-                  size={16}
-                  className="text-red-500"
-                />
-
-                <p className="text-xs font-bold text-slate-700">
-                  Cancelled Orders
-                </p>
-              </div>
-
-              <p className="mt-2 text-2xl font-bold text-red-600">
-                {cancelledOrders.length}
               </p>
             </div>
 

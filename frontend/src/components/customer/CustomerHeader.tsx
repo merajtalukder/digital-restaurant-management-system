@@ -91,7 +91,7 @@ const CustomerHeader = () => {
                 truncate
               "
             >
-              Restaurant Name
+              Digital Restaurant
             </h1>
 
             {customerTableNumber ? (

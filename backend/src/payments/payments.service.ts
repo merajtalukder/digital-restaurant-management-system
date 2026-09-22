@@ -24,11 +24,15 @@ export class PaymentsService {
   }
 
   private get sslStorePassword(): string {
-    return process.env.SSLCOMMERZ_STORE_PASSWORD || '';
+    return (
+      process.env.SSLCOMMERZ_STORE_PASSWORD || ''
+    );
   }
 
   private get sslIsLive(): boolean {
-    return process.env.SSLCOMMERZ_IS_LIVE === 'true';
+    return (
+      process.env.SSLCOMMERZ_IS_LIVE === 'true'
+    );
   }
 
   private get frontendUrl(): string {
@@ -116,6 +120,7 @@ export class PaymentsService {
     }
 
     const requestedAmount = Number(amount);
+
     const orderAmount = Number(
       order.totalAmount,
     );
@@ -171,7 +176,10 @@ export class PaymentsService {
   // INITIATE SSLCOMMERZ
   // ==========================================
 
-  async initiate(paymentId: number) {
+  async initiate(
+    paymentId: number,
+    source?: string,
+  ) {
     if (
       !this.sslStoreId ||
       !this.sslStorePassword
@@ -236,9 +244,14 @@ export class PaymentsService {
       );
     }
 
+    const paymentSource =
+      source === 'waiter'
+        ? 'W'
+        : 'C';
+
     const tranId =
       payment.transactionId ||
-      `DRS-${payment.orderId}-${payment.id}-${Date.now()}`;
+      `DRS-${paymentSource}-${payment.orderId}-${payment.id}-${Date.now()}`;
 
     if (!payment.transactionId) {
       await this.prisma.payment.update({
@@ -410,11 +423,29 @@ export class PaymentsService {
       paymentId: payment.id,
       orderId: payment.orderId,
       transactionId: tranId,
+      source:
+        source === 'waiter'
+          ? 'waiter'
+          : 'customer',
       gatewayPageURL:
         result.GatewayPageURL,
       sessionKey:
         result.sessionkey || null,
     };
+  }
+
+  // ==========================================
+  // DETECT PAYMENT SOURCE
+  // ==========================================
+
+  private getPaymentSource(
+    transactionId: string,
+  ): 'waiter' | 'customer' {
+    return transactionId.startsWith(
+      'DRS-W-',
+    )
+      ? 'waiter'
+      : 'customer';
   }
 
   // ==========================================
@@ -454,11 +485,15 @@ export class PaymentsService {
       );
     }
 
+    const source =
+      this.getPaymentSource(tranId);
+
     if (payment.status === 'PAID') {
       return this.buildFrontendRedirect(
         'success',
         payment.orderId,
         payment.id,
+        source,
       );
     }
 
@@ -489,6 +524,7 @@ export class PaymentsService {
         'failed',
         payment.orderId,
         payment.id,
+        source,
       );
     }
 
@@ -565,6 +601,7 @@ export class PaymentsService {
       'success',
       paidPayment.orderId,
       paidPayment.id,
+      source,
     );
   }
 
@@ -600,10 +637,14 @@ export class PaymentsService {
           },
         });
 
+        const source =
+          this.getPaymentSource(tranId);
+
         return this.buildFrontendRedirect(
           'failed',
           payment.orderId,
           payment.id,
+          source,
         );
       }
     }
@@ -645,10 +686,14 @@ export class PaymentsService {
           },
         });
 
+        const source =
+          this.getPaymentSource(tranId);
+
         return this.buildFrontendRedirect(
           'cancelled',
           payment.orderId,
           payment.id,
+          source,
         );
       }
     }
@@ -676,7 +721,8 @@ export class PaymentsService {
     if (!tranId) {
       return {
         success: false,
-        message: 'Transaction ID missing',
+        message:
+          'Transaction ID missing',
       };
     }
 
@@ -992,9 +1038,15 @@ export class PaymentsService {
     status: string,
     orderId?: number,
     paymentId?: number,
+    source?: 'waiter' | 'customer',
   ): string {
+    const redirectPath =
+      source === 'waiter'
+        ? '/waiter/payment-success'
+        : '/customer/payment-result';
+
     const url = new URL(
-      '/customer/payment-result',
+      redirectPath,
       this.frontendUrl,
     );
 
@@ -1004,6 +1056,11 @@ export class PaymentsService {
     );
 
     if (orderId !== undefined) {
+      url.searchParams.set(
+        'order',
+        String(orderId),
+      );
+
       url.searchParams.set(
         'orderId',
         String(orderId),

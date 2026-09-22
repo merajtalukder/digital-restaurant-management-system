@@ -1,9 +1,8 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 
 import {
-  Home,
+  Utensils,
   Package,
-  User,
 } from "lucide-react";
 
 const BottomNavigation = () => {
@@ -21,9 +20,6 @@ const BottomNavigation = () => {
 
   const isOrdersActive =
     location.pathname === "/customer/orders";
-
-  const isProfileActive =
-    location.pathname === "/customer/profile";
 
   return (
     <nav
@@ -72,7 +68,7 @@ const BottomNavigation = () => {
             }
           `}
         >
-          <Home
+          <Utensils
             size={20}
             strokeWidth={isMenuActive ? 2.5 : 2}
           />
@@ -128,46 +124,6 @@ const BottomNavigation = () => {
             `}
           >
             Orders
-          </span>
-        </Link>
-
-        {/* PROFILE */}
-        <Link
-          to={`/customer/profile${tableQuery}`}
-          className={`
-            flex
-            flex-col
-            items-center
-            justify-center
-            gap-0.5
-            min-w-[65px]
-            py-1
-            rounded-lg
-            transition-all
-            duration-200
-            ${
-              isProfileActive
-                ? "text-cyan-600 bg-cyan-50"
-                : "text-slate-500 hover:text-cyan-600"
-            }
-          `}
-        >
-          <User
-            size={20}
-            strokeWidth={isProfileActive ? 2.5 : 2}
-          />
-
-          <span
-            className={`
-              text-[11px]
-              ${
-                isProfileActive
-                  ? "font-semibold"
-                  : "font-medium"
-              }
-            `}
-          >
-            Profile
           </span>
         </Link>
       </div>

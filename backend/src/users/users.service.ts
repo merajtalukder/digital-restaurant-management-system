@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../database/prisma.service';
@@ -29,7 +33,6 @@ export class UsersService {
         role: data.role,
       },
 
-      // Password কখনো response-এ যাবে না
       select: {
         id: true,
         name: true,
@@ -70,6 +73,106 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: {
         email,
+      },
+    });
+  }
+
+  // =========================
+  // UPDATE USER
+  // =========================
+
+  async update(
+    id: number,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      status?: string;
+    },
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        'User not found.',
+      );
+    }
+
+    return this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        ...(data.name !== undefined && {
+          name: data.name,
+        }),
+
+        ...(data.email !== undefined && {
+          email: data.email,
+        }),
+
+        ...(data.phone !== undefined && {
+          phone: data.phone,
+        }),
+
+        ...(data.role !== undefined && {
+          role: data.role as any,
+        }),
+
+        ...(data.status !== undefined && {
+          status: data.status as any,
+        }),
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  // =========================
+  // DELETE USER
+  // =========================
+
+  async remove(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        'User not found.',
+      );
+    }
+
+    return this.prisma.user.delete({
+      where: {
+        id,
+      },
+
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   }

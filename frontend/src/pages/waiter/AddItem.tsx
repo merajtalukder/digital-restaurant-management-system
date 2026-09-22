@@ -2318,7 +2318,7 @@ const AddItem = () => {
                       })
                     )
                   }
-                  placeholder="Example: jhal beshi, tok beshi, less oil..."
+                  placeholder="Example: Extra Spicy • Extra Tangy • Less Oil • Mild • Extra Crispy • No Onion • No Garlic"
                   className="
                     w-full
                     resize-none

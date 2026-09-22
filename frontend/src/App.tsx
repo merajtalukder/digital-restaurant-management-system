@@ -9,6 +9,9 @@ import {
 import Home from "./pages/Home.tsx";
 import Login from "./pages/Login.tsx";
 
+
+import UIShowcase from "./pages/UIShowcase.tsx";
+
 // ================= KITCHEN =================
 
 import KitchenStaff from "./pages/kitchen/Kitchen";
@@ -88,6 +91,8 @@ function App() {
           path="/login"
           element={<Login />}
         />
+
+<Route path="/ui-showcase" element={<UIShowcase />} />
 
 
         {/* ==================================================
