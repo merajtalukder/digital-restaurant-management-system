@@ -497,6 +497,10 @@ export class PaymentsService {
       );
     }
 
+    // ==========================================
+    // VALIDATE TRANSACTION
+    // ==========================================
+
     const validation =
       await this.validateTransaction(
         valId,

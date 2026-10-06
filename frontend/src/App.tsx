@@ -33,6 +33,8 @@ import Users from "./pages/admin/Users";
 import Reports from "./pages/admin/Reports";
 import Settings from "./pages/admin/Settings";
 
+
+import POSOverview from "./pages/admin/POSOverview";
 // ================= WAITER =================
 
 import WaiterLayout from "./layouts/WaiterLayout";
@@ -201,6 +203,9 @@ function App() {
             element={<Settings />}
           />
         </Route>
+
+
+        <Route path="/admin/pos-overview" element={<POSOverview />} />
 
 
         {/* ==================================================
