@@ -14,7 +14,10 @@ model Category {
   status      Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
   menuItems   MenuItem[]
+
+  @@map("Category")
 }
 
 model MenuItem {
@@ -28,10 +31,12 @@ model MenuItem {
   categoryId  Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
   category    Category   @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
 
   @@index([categoryId], map: "MenuItem_categoryId_fkey")
+  @@map("MenuItem")
 }
 
 model Order {
@@ -45,6 +50,7 @@ model Order {
   waiterId        Int?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+
   table           RestaurantTable @relation(fields: [tableId], references: [id])
   waiter          User?           @relation(fields: [waiterId], references: [id])
   orderItems      OrderItem[]
@@ -52,6 +58,7 @@ model Order {
 
   @@index([tableId], map: "Order_tableId_fkey")
   @@index([waiterId], map: "Order_waiterId_fkey")
+  @@map("Order")
 }
 
 model OrderItem {
@@ -61,11 +68,13 @@ model OrderItem {
   subtotal   Decimal  @db.Decimal(10, 2)
   orderId    Int
   menuItemId Int
+
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
   order      Order    @relation(fields: [orderId], references: [id])
 
   @@index([menuItemId], map: "OrderItem_menuItemId_fkey")
   @@index([orderId], map: "OrderItem_orderId_fkey")
+  @@map("OrderItem")
 }
 
 model Payment {
@@ -76,7 +85,10 @@ model Payment {
   transactionId String?
   orderId       Int           @unique
   createdAt     DateTime      @default(now())
+
   order         Order         @relation(fields: [orderId], references: [id])
+
+  @@map("Payment")
 }
 
 model RestaurantTable {
@@ -85,8 +97,11 @@ model RestaurantTable {
   capacity    Int
   status      TableStatus   @default(AVAILABLE)
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  updatedAt   DateTime      @updatedAt
+
   orders      Order[]
+
+  @@map("RestaurantTable")
 }
 
 model User {
@@ -99,7 +114,10 @@ model User {
   status    UserStatus @default(ACTIVE)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
   orders    Order[]
+
+  @@map("User")
 }
 
 enum PaymentMethod {
