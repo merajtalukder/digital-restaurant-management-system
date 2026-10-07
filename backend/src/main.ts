@@ -1,13 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Allow frontend to access backend API
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'https://digital-restaurant-management-syste.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Restaurant POS API')
