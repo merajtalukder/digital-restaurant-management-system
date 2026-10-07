@@ -394,31 +394,6 @@ const Cashier = () => {
     );
   }, [todaySales]);
 
-  const weeklySalesAmount = useMemo(() => {
-    return weeklySales.reduce(
-      (sum, payment) =>
-        sum + Number(payment.amount || 0),
-      0,
-    );
-  }, [weeklySales]);
-
-  const monthlySalesAmount = useMemo(() => {
-    return monthlySales.reduce(
-      (sum, payment) =>
-        sum + Number(payment.amount || 0),
-      0,
-    );
-  }, [monthlySales]);
-
-  const previousMonthlySalesAmount =
-    useMemo(() => {
-      return previousMonthlySales.reduce(
-        (sum, payment) =>
-          sum + Number(payment.amount || 0),
-        0,
-      );
-    }, [previousMonthlySales]);
-
   const pendingAmount = useMemo(() => {
     return pendingPayments.reduce(
       (sum, payment) =>
