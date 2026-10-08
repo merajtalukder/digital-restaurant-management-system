@@ -7,7 +7,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'https://digital-restaurant-management-syste.vercel.app',
+      'https://digital-restaurant-management-system-772eym062-meraj10.vercel.app',
       'http://localhost:5173',
       'http://localhost:5174',
     ],
@@ -23,8 +23,8 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  const swaggerDocument = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, swaggerDocument);
 
   await app.listen(process.env.PORT ?? 3000);
 }
