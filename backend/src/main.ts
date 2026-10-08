@@ -6,11 +6,25 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [
-      'https://digital-restaurant-management-system-772eym062-meraj10.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:5174',
-    ],
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const allowed =
+        origin === 'http://localhost:5173' ||
+        origin === 'http://localhost:5174' ||
+        /^https:\/\/digital-restaurant-management-system-[a-z0-9]+-meraj10\.vercel\.app$/.test(
+          origin,
+        );
+
+      if (allowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'), false);
+      }
+    },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
