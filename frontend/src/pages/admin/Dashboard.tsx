@@ -796,13 +796,7 @@ export default function Dashboard() {
     });
   };
 
-  const loadingBlock = (
-    <div className="animate-pulse space-y-3">
-      <div className="h-3 w-2/3 rounded bg-slate-100" />
-      <div className="h-8 w-1/2 rounded bg-slate-100" />
-    </div>
-  );
-
+  
   return (
     <div className="min-h-full bg-slate-50">
       <div className="mx-auto max-w-[1800px] space-y-6 p-4 md:p-6 xl:p-8">
