@@ -9,7 +9,7 @@ interface Category {
   updatedAt?: string;
 }
 
-const API_URL = "http://localhost:3000/categories";
+const API_URL = "https://digital-restaurant-backend.onrender.com/categories";
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);

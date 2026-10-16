@@ -33,7 +33,7 @@ interface MenuItem {
 type MenuLevel = "TYPE" | "CATEGORY" | "ITEMS";
 type FoodType = "INSTANT" | "COOKED";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://digital-restaurant-backend.onrender.com";
 
 const Menu = () => {
   const [categories, setCategories] = useState<Category[]>([]);

@@ -42,7 +42,7 @@ const Login = () => {
     try {
       const apiUrl =
         import.meta.env.VITE_API_URL ||
-        "http://localhost:3000";
+        "https://digital-restaurant-backend.onrender.com";
 
       const response = await fetch(
         `${apiUrl}/auth/login`,

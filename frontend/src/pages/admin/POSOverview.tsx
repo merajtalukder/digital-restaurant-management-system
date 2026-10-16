@@ -19,7 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://digital-restaurant-backend.onrender.com";
 
 type Period = "Today" | "This Week" | "This Month" | "Previous Month";
 

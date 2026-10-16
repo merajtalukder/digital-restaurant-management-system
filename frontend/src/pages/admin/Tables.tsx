@@ -19,7 +19,7 @@ interface RestaurantTable {
   status: TableStatus;
 }
 
-const API_URL = "http://localhost:3000/tables";
+const API_URL = "https://digital-restaurant-backend.onrender.com/tables";
 
 const Tables = () => {
   const [showForm, setShowForm] = useState(false);

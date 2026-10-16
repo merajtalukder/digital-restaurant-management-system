@@ -16,7 +16,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://digital-restaurant-backend.onrender.com";
 
 type ReportPeriod =
   | "Today"
