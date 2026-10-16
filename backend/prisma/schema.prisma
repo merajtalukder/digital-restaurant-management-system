@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -62,15 +63,16 @@ model Order {
 }
 
 model OrderItem {
-  id         Int      @id @default(autoincrement())
-  quantity   Int
-  unitPrice  Decimal  @db.Decimal(10, 2)
-  subtotal   Decimal  @db.Decimal(10, 2)
-  orderId    Int
-  menuItemId Int
+  id                  Int      @id @default(autoincrement())
+  quantity            Int
+  unitPrice           Decimal  @db.Decimal(10, 2)
+  subtotal            Decimal  @db.Decimal(10, 2)
+  orderId             Int
+  menuItemId          Int
+  specialInstructions String?  @db.Text
 
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  order      Order    @relation(fields: [orderId], references: [id])
+  menuItem            MenuItem @relation(fields: [menuItemId], references: [id])
+  order               Order    @relation(fields: [orderId], references: [id])
 
   @@index([menuItemId], map: "OrderItem_menuItemId_fkey")
   @@index([orderId], map: "OrderItem_orderId_fkey")
@@ -95,9 +97,9 @@ model RestaurantTable {
   id          Int          @id @default(autoincrement())
   tableNumber Int          @unique
   capacity    Int
-  status      TableStatus   @default(AVAILABLE)
+  status      TableStatus  @default(AVAILABLE)
   createdAt   DateTime     @default(now())
-  updatedAt   DateTime      @updatedAt
+  updatedAt   DateTime     @updatedAt
 
   orders      Order[]
 
