@@ -258,7 +258,7 @@ const Payment = () => {
   ) => {
     const response =
       await api.post(
-        `/payments/${paymentId}/initiate`,
+        `/payments/${paymentId}/initiate?source=customer`,
       );
 
     const gatewayPageURL =

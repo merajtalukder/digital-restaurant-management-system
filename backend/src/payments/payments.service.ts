@@ -1,4 +1,3 @@
-
 import {
   BadRequestException,
   Injectable,
@@ -61,19 +60,12 @@ export class PaymentsService {
     },
   };
 
-  private readonly onlineMethods = [
-    'CARD',
-    'BKASH',
-    'NAGAD',
-    'ROCKET',
-  ];
+  private readonly onlineMethods = ['CARD', 'BKASH', 'NAGAD', 'ROCKET'];
 
   private getPaymentSource(
     transactionId: string,
   ): 'waiter' | 'customer' {
-    return transactionId.startsWith('DRS-W-')
-      ? 'waiter'
-      : 'customer';
+    return transactionId.startsWith('DRS-W-') ? 'waiter' : 'customer';
   }
 
   private buildFrontendRedirect(
@@ -104,8 +96,7 @@ export class PaymentsService {
   }
 
   async create(createPaymentDto: CreatePaymentDto) {
-    const { orderId, amount, method, transactionId } =
-      createPaymentDto;
+    const { orderId, amount, method, transactionId } = createPaymentDto;
 
     const numericOrderId = Number(orderId);
     const requestedAmount = Number(amount);
@@ -115,10 +106,7 @@ export class PaymentsService {
       throw new BadRequestException('Invalid order ID');
     }
 
-    if (
-      !Number.isFinite(requestedAmount) ||
-      requestedAmount <= 0
-    ) {
+    if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
       throw new BadRequestException('Invalid payment amount');
     }
 
@@ -198,7 +186,9 @@ export class PaymentsService {
       );
     }
 
-    if (!this.onlineMethods.includes(String(payment.method).toUpperCase())) {
+    const normalizedMethod = String(payment.method).toUpperCase();
+
+    if (!this.onlineMethods.includes(normalizedMethod)) {
       throw new BadRequestException(
         `Payment method is ${payment.method}. Select an online payment method before initiating SSLCOMMERZ.`,
       );
@@ -212,17 +202,31 @@ export class PaymentsService {
       );
     }
 
-    const paymentSource = source === 'waiter' ? 'W' : 'C';
+    // Determine which panel initiated the payment.
+    const requestedSource =
+      source?.trim().toLowerCase() === 'waiter'
+        ? 'waiter'
+        : 'customer';
 
-    const tranId =
-      payment.transactionId ||
-      `DRS-${paymentSource}-${payment.orderId}-${payment.id}-${Date.now()}`;
+    const expectedPrefix =
+      requestedSource === 'waiter' ? 'DRS-W-' : 'DRS-C-';
 
-    if (!payment.transactionId) {
+    // Reuse the transaction ID only if its prefix matches the source.
+    // Otherwise, create and save a correctly prefixed transaction ID.
+    let tranId = payment.transactionId?.trim() || '';
+
+    if (!tranId.startsWith(expectedPrefix)) {
+      tranId =
+        `${expectedPrefix}${payment.orderId}-${payment.id}-${Date.now()}`;
+
       await this.prisma.payment.update({
         where: { id: payment.id },
         data: { transactionId: tranId },
       });
+
+      this.logger.log(
+        `Payment ${payment.id}: transaction ID assigned for ${requestedSource}`,
+      );
     }
 
     const params = new URLSearchParams();
@@ -312,7 +316,7 @@ export class PaymentsService {
     }
 
     this.logger.log(
-      `Payment ${payment.id} initiated successfully. Mode: ${this.sslIsLive ? 'LIVE' : 'SANDBOX'}`,
+      `Payment ${payment.id} initiated for ${requestedSource}. Mode: ${this.sslIsLive ? 'LIVE' : 'SANDBOX'}`,
     );
 
     return {
@@ -320,7 +324,7 @@ export class PaymentsService {
       paymentId: payment.id,
       orderId: payment.orderId,
       transactionId: tranId,
-      source: paymentSource === 'W' ? 'waiter' : 'customer',
+      source: requestedSource,
       gatewayPageURL: result.GatewayPageURL,
       sessionKey: result.sessionkey || null,
     };

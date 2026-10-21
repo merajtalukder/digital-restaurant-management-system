@@ -214,7 +214,7 @@ const Payment = () => {
 
     const initiateResponse =
       await api.post<InitiatePaymentResponse>(
-        `/payments/${payment.id}/initiate`,
+        `/payments/${payment.id}/initiate?source=waiter`,
       );
 
     const data = initiateResponse.data;

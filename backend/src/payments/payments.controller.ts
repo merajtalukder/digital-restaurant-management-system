@@ -21,10 +21,7 @@ export class PaymentsController {
     private readonly paymentsService: PaymentsService,
   ) {}
 
-  // ==========================================
-  // Create Payment
-  // ==========================================
-
+  // Create a payment
   @Post()
   create(
     @Body() createPaymentDto: CreatePaymentDto,
@@ -34,25 +31,26 @@ export class PaymentsController {
     );
   }
 
-  // ==========================================
-  // Initiate SSLCOMMERZ Payment
-  // ==========================================
-
+  // Initiate SSLCOMMERZ payment
+  // Customer: POST /payments/:id/initiate?source=customer
+  // Waiter:   POST /payments/:id/initiate?source=waiter
   @Post(':id/initiate')
   initiate(
     @Param('id', ParseIntPipe) id: number,
     @Query('source') source?: string,
   ) {
+    const normalizedSource =
+      source?.trim().toLowerCase() === 'waiter'
+        ? 'waiter'
+        : 'customer';
+
     return this.paymentsService.initiate(
       id,
-      source,
+      normalizedSource,
     );
   }
 
-  // ==========================================
-  // SSLCOMMERZ SUCCESS CALLBACK
-  // ==========================================
-
+  // SSLCOMMERZ success callback
   @Post('success')
   async success(
     @Body() body: Record<string, any>,
@@ -61,16 +59,10 @@ export class PaymentsController {
     const redirectUrl =
       await this.paymentsService.success(body);
 
-    return res.redirect(
-      302,
-      redirectUrl,
-    );
+    return res.redirect(302, redirectUrl);
   }
 
-  // ==========================================
-  // SSLCOMMERZ FAIL CALLBACK
-  // ==========================================
-
+  // SSLCOMMERZ failure callback
   @Post('fail')
   async fail(
     @Body() body: Record<string, any>,
@@ -79,16 +71,10 @@ export class PaymentsController {
     const redirectUrl =
       await this.paymentsService.fail(body);
 
-    return res.redirect(
-      302,
-      redirectUrl,
-    );
+    return res.redirect(302, redirectUrl);
   }
 
-  // ==========================================
-  // SSLCOMMERZ CANCEL CALLBACK
-  // ==========================================
-
+  // SSLCOMMERZ cancellation callback
   @Post('cancel')
   async cancel(
     @Body() body: Record<string, any>,
@@ -97,16 +83,10 @@ export class PaymentsController {
     const redirectUrl =
       await this.paymentsService.cancel(body);
 
-    return res.redirect(
-      302,
-      redirectUrl,
-    );
+    return res.redirect(302, redirectUrl);
   }
 
-  // ==========================================
-  // SSLCOMMERZ IPN
-  // ==========================================
-
+  // SSLCOMMERZ Instant Payment Notification
   @Post('ipn')
   ipn(
     @Body() body: Record<string, any>,
@@ -114,10 +94,7 @@ export class PaymentsController {
     return this.paymentsService.ipn(body);
   }
 
-  // ==========================================
-  // Cashier: Mark Payment as PAID
-  // ==========================================
-
+  // Cashier: manually complete a CASH payment
   @Patch(':id/pay')
   pay(
     @Param('id', ParseIntPipe) id: number,
@@ -129,19 +106,13 @@ export class PaymentsController {
     );
   }
 
-  // ==========================================
-  // Get All Payments
-  // ==========================================
-
+  // Get all payments
   @Get()
   findAll() {
     return this.paymentsService.findAll();
   }
 
-  // ==========================================
-  // Get Payment By Order
-  // ==========================================
-
+  // Get payment by order ID
   @Get('order/:orderId')
   findByOrderId(
     @Param('orderId', ParseIntPipe)
@@ -152,10 +123,7 @@ export class PaymentsController {
     );
   }
 
-  // ==========================================
-  // Get Payment By ID
-  // ==========================================
-
+  // Get payment by payment ID
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,
